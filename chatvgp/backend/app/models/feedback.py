@@ -1,30 +1,28 @@
-from sqlalchemy import String, DateTime, ForeignKey, Text, Boolean, Date, Integer
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean, Date
 from sqlalchemy.sql import func
-from sqlalchemy.orm import mapped_column, relationship
+from sqlalchemy.orm import relationship
 from app.database import Base
-from typing import Optional
-from datetime import date, datetime
 
 class Feedback(Base):
     __tablename__ = "feedbacks"
 
-    id: int = mapped_column(primary_key=True, index=True)
-    prestador_id: int = mapped_column(ForeignKey("prestadores.id"), nullable=False, index=True)
-    condominio_id: int = mapped_column(ForeignKey("condominios.id"), nullable=False, index=True)
-    categoria_id: int = mapped_column(ForeignKey("categorias.id"), nullable=False, index=True)
-    data_feedback: date = mapped_column(Date, nullable=False)
-    qualidade: int = mapped_column(nullable=False)  # 1-5
-    material_estimativa: str = mapped_column(String(50), nullable=False)  # 'Acertou', 'Subestimou 10-25%', etc
-    prazo_manteve: bool = mapped_column(Boolean, nullable=False)  # True/False
-    custo_manteve: bool = mapped_column(Boolean, nullable=False)  # True/False
-    observacoes: Optional[str] = mapped_column(Text, nullable=True)
-    seu_feedback: bool = mapped_column(Boolean, default=False)
-    criado_em: Optional[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=True)
+    id = Column(Integer, primary_key=True, index=True)
+    prestador_id = Column(Integer, ForeignKey("prestadores.id"), nullable=False, index=True)
+    condominio_id = Column(Integer, ForeignKey("condominios.id"), nullable=False, index=True)
+    categoria_id = Column(Integer, ForeignKey("categorias.id"), nullable=False, index=True)
+    data_feedback = Column(Date, nullable=False)
+    qualidade = Column(Integer, nullable=False)  # 1-5
+    material_estimativa = Column(String(50), nullable=False)  # 'Acertou', 'Subestimou 10-25%', etc
+    prazo_manteve = Column(Boolean, nullable=False)  # True/False
+    custo_manteve = Column(Boolean, nullable=False)  # True/False
+    observacoes = Column(Text, nullable=True)
+    seu_feedback = Column(Boolean, default=False)
+    criado_em = Column(DateTime, server_default=func.now())
 
     # Relationships
-    prestador: Optional['Prestador'] = relationship("Prestador")
-    condominio: Optional['Condominio'] = relationship("Condominio")
-    categoria: Optional['Categoria'] = relationship("Categoria")
+    prestador = relationship("Prestador")
+    condominio = relationship("Condominio")
+    categoria = relationship("Categoria")
 
     def __repr__(self):
         return f"<Feedback(id={self.id}, prestador_id={self.prestador_id}, qualidade={self.qualidade})>"
