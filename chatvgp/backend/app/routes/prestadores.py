@@ -57,29 +57,27 @@ def listar_prestadores(
         else:
             stats = None
 
-        result.append(
-            PrestadorComScore(
-                id=p.id,
-                nome=p.nome,
-                whatsapp=p.whatsapp,
-                categoria_id=p.categoria_id,
-                condominio_ids=p.condominio_ids,
-                status=p.status,
-                notas=p.notas,
-                criado_em=p.criado_em,
-                categoria=p.categoria,
-                score_final=stats.score_final if stats else 0,
-                feedback_count=stats.total_feedbacks if stats else 0,
-                qualidade_media=stats.qualidade_media if stats else None,
-                material_acertou_pct=stats.material_acertou_pct if stats else None,
-                prazo_cumprido_pct=stats.prazo_cumprido_pct if stats else None,
-                custo_mantido_pct=stats.custo_mantido_pct if stats else None,
-            )
-        )
+        result.append({
+            "id": p.id,
+            "nome": p.nome,
+            "whatsapp": p.whatsapp,
+            "categoria_id": p.categoria_id,
+            "condominio_ids": p.condominio_ids,
+            "status": p.status,
+            "notas": p.notas,
+            "criado_em": p.criado_em.isoformat() if p.criado_em else None,
+            "categoria": {"id": p.categoria.id, "nome": p.categoria.nome} if p.categoria else None,
+            "score_final": stats.score_final if stats else 0,
+            "feedback_count": stats.total_feedbacks if stats else 0,
+            "qualidade_media": stats.qualidade_media if stats else None,
+            "material_acertou_pct": stats.material_acertou_pct if stats else None,
+            "prazo_cumprido_pct": stats.prazo_cumprido_pct if stats else None,
+            "custo_mantido_pct": stats.custo_mantido_pct if stats else None,
+        })
 
     return result
 
-@router.get("/{prestador_id}", response_model=PrestadorComScore)
+@router.get("/{prestador_id}")
 def obter_prestador(prestador_id: int, db: Session = Depends(get_db)):
     """
     Obter detalhes de um prestador com score.
