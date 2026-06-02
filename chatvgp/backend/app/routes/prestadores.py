@@ -96,39 +96,32 @@ def obter_prestador(prestador_id: int, db: Session = Depends(get_db)):
     else:
         stats = None
 
-    return PrestadorComScore(
-        id=prestador.id,
-        nome=prestador.nome,
-        whatsapp=prestador.whatsapp,
-        categoria_id=prestador.categoria_id,
-        condominio_ids=prestador.condominio_ids,
-        status=prestador.status,
-        notas=prestador.notas,
-        criado_em=prestador.criado_em,
-        categoria=prestador.categoria,
-        score_final=stats.score_final if stats else 0,
-        feedback_count=stats.total_feedbacks if stats else 0,
-        qualidade_media=stats.qualidade_media if stats else None,
-        material_acertou_pct=stats.material_acertou_pct if stats else None,
-        prazo_cumprido_pct=stats.prazo_cumprido_pct if stats else None,
-        custo_mantido_pct=stats.custo_mantido_pct if stats else None,
-    )
+    return {
+        "id": prestador.id,
+        "nome": prestador.nome,
+        "whatsapp": prestador.whatsapp,
+        "categoria_id": prestador.categoria_id,
+        "condominio_ids": prestador.condominio_ids,
+        "status": prestador.status,
+        "notas": prestador.notas,
+        "criado_em": prestador.criado_em.isoformat() if prestador.criado_em else None,
+        "categoria": {"id": prestador.categoria.id, "nome": prestador.categoria.nome} if prestador.categoria else None,
+        "score_final": stats.score_final if stats else 0,
+        "feedback_count": stats.total_feedbacks if stats else 0,
+        "qualidade_media": stats.qualidade_media if stats else None,
+        "material_acertou_pct": stats.material_acertou_pct if stats else None,
+        "prazo_cumprido_pct": stats.prazo_cumprido_pct if stats else None,
+        "custo_mantido_pct": stats.custo_mantido_pct if stats else None,
+    }
 
-@router.post("", response_model=PrestadorResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 def criar_prestador(
     prestador: PrestadorCreate,
     db: Session = Depends(get_db),
-    authorization: str = None,
 ):
     """
     Criar novo prestador.
-    Admin only (requer header Authorization).
     """
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de autenticação necessário",
-        )
 
     # Validar categoria existe
     categoria = db.query(Categoria).filter(Categoria.id == prestador.categoria_id).first()
@@ -153,22 +146,15 @@ def criar_prestador(
 
     return novo_prestador
 
-@router.put("/{prestador_id}", response_model=PrestadorResponse)
+@router.put("/{prestador_id}")
 def atualizar_prestador(
     prestador_id: int,
     prestador_update: PrestadorUpdate,
     db: Session = Depends(get_db),
-    authorization: str = None,
 ):
     """
     Atualizar prestador existente.
-    Admin only.
     """
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de autenticação necessário",
-        )
 
     prestador = db.query(Prestador).filter(Prestador.id == prestador_id).first()
 
@@ -196,23 +182,25 @@ def atualizar_prestador(
     db.commit()
     db.refresh(prestador)
 
-    return prestador
+    return {
+        "id": prestador.id,
+        "nome": prestador.nome,
+        "whatsapp": prestador.whatsapp,
+        "categoria_id": prestador.categoria_id,
+        "condominio_ids": prestador.condominio_ids,
+        "status": prestador.status,
+        "notas": prestador.notas,
+        "criado_em": prestador.criado_em.isoformat() if prestador.criado_em else None,
+    }
 
 @router.delete("/{prestador_id}", status_code=status.HTTP_204_NO_CONTENT)
 def deletar_prestador(
     prestador_id: int,
     db: Session = Depends(get_db),
-    authorization: str = None,
 ):
     """
     Deletar prestador.
-    Admin only.
     """
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de autenticação necessário",
-        )
 
     prestador = db.query(Prestador).filter(Prestador.id == prestador_id).first()
 
