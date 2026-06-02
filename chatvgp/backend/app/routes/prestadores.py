@@ -27,7 +27,7 @@ def verificar_admin(authorization: str = None) -> bool:
         )
     return True
 
-@router.get("", response_model=List[PrestadorComScore])
+@router.get("")
 def listar_prestadores(
     categoria_id: int = None,
     condominio_id: int = None,
