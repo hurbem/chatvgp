@@ -1,20 +1,8 @@
 from sqlalchemy.orm import Session
-from anthropic import Anthropic
 from app.config import settings
 from app.models import Prestador, Categoria, Condominio, Feedback
 from app.services.ranking_service import calcular_stats_prestador
 import json
-import logging
-import sys
-
-logger = logging.getLogger(__name__)
-
-try:
-    client = Anthropic(api_key=settings.CLAUDE_API_KEY)
-    logger.warning(f"✅ Anthropic client inicializado")
-except Exception as e:
-    logger.error(f"❌ Erro ao inicializar Anthropic: {e}")
-    client = None
 
 def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
     """
@@ -32,8 +20,6 @@ def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
         keywords = cat.nome.lower().split()
         if any(kw in pergunta_lower for kw in keywords):
             categoria_id = cat.id
-            logger.warning(f"[EXTRACT] ✅ Categoria encontrada: {cat.nome} (ID: {cat.id})")
-            sys.stdout.flush()
             break
 
     # Keyword matching para condomínios
@@ -42,21 +28,15 @@ def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
         keywords = cond.nome.lower().split() + cond.cidade.lower().split()
         if any(kw in pergunta_lower for kw in keywords):
             condominio_id = cond.id
-            logger.warning(f"[EXTRACT] ✅ Condomínio encontrado: {cond.nome} (ID: {cond.id})")
-            sys.stdout.flush()
             break
 
     # Se não encontrou categoria, retorna a primeira
     if not categoria_id and categorias:
         categoria_id = categorias[0].id
-        logger.warning(f"[EXTRACT] ⚠️ Categoria não identificada, usando padrão: {categorias[0].nome}")
-        sys.stdout.flush()
 
     # Se não encontrou condomínio, retorna o primeiro
     if not condominio_id and condominios:
         condominio_id = condominios[0].id
-        logger.warning(f"[EXTRACT] ⚠️ Condomínio não identificado, usando padrão: {condominios[0].nome}")
-        sys.stdout.flush()
 
     return categoria_id, condominio_id
 
