@@ -20,10 +20,19 @@ def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
     categorias = db.query(Categoria).all()
     condominios = db.query(Condominio).all()
 
-    # Se não há cliente Anthropic, retorna primeiro de cada
-    if not client or not settings.CLAUDE_API_KEY.startswith("sk-"):
+    # Debug: verificar token
+    token_status = settings.CLAUDE_API_KEY[:20] + "..." if settings.CLAUDE_API_KEY else "VAZIO"
+    print(f"[DEBUG] CLAUDE_API_KEY: {token_status}")
+    print(f"[DEBUG] Cliente Anthropic: {client is not None}")
+    print(f"[DEBUG] Token válido (sk-ant-): {settings.CLAUDE_API_KEY.startswith('sk-ant-')}")
+
+    # Se não há cliente Anthropic ou token inválido, retorna primeiro de cada
+    if not client or not settings.CLAUDE_API_KEY.startswith("sk-ant-"):
+        print(f"[DEBUG] ⚠️ USANDO FALLBACK (sem Claude)")
         return (categorias[0].id if categorias else None,
                 condominios[0].id if condominios else None)
+
+    print(f"[DEBUG] ✅ USANDO CLAUDE")
 
     categorias_str = ", ".join([f"{c.id}: {c.nome}" for c in categorias])
     condominios_str = ", ".join([f"{c.id}: {c.nome} ({c.cidade})" for c in condominios])
@@ -52,10 +61,14 @@ Responda APENAS em JSON:
         end = response_text.rfind("}") + 1
         json_str = response_text[start:end]
         result = json.loads(json_str)
-        return result.get("categoria_id"), result.get("condominio_id")
+        cat_id = result.get("categoria_id")
+        cond_id = result.get("condominio_id")
+        print(f"[DEBUG] ✅ Claude retornou: categoria_id={cat_id}, condominio_id={cond_id}")
+        return cat_id, cond_id
     except Exception as e:
         # Fallback: retorna primeiro de cada
-        print(f"Erro ao chamar Claude: {e}")
+        print(f"[DEBUG] ❌ Erro ao chamar Claude: {type(e).__name__}: {e}")
+        print(f"[DEBUG] ⚠️ USANDO FALLBACK por erro")
         return (categorias[0].id if categorias else None,
                 condominios[0].id if condominios else None)
 
