@@ -18,7 +18,7 @@ except Exception as e:
     print(f"⚠️ Aviso ao criar tabelas: {e}")
 
 try:
-    from app.routes import chat, prestadores, categorias, condominios, feedback
+    from app.routes import chat, prestadores, categorias, condominios, feedback, auth
     routes_available = True
 except Exception as e:
     print(f"Warning: Could not load routes: {e}")
@@ -41,6 +41,7 @@ app.add_middleware(
 
 # Incluir rotas se disponíveis
 if routes_available:
+    app.include_router(auth.router)
     app.include_router(chat.router)
     app.include_router(prestadores.router)
     app.include_router(categorias.router)

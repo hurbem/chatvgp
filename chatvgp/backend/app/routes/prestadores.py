@@ -118,10 +118,40 @@ def obter_prestador(prestador_id: int, db: Session = Depends(get_db)):
 def criar_prestador(
     prestador: PrestadorCreate,
     db: Session = Depends(get_db),
+    authorization: str = None,
 ):
     """
     Criar novo prestador.
+    Admin only (requer header Authorization: Bearer <token>).
     """
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de autenticação necessário",
+        )
+
+    # Extrair token do header "Authorization: Bearer <token>"
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Scheme inválido. Use: Authorization: Bearer <token>",
+            )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Formato de Authorization inválido",
+        )
+
+    # Verificar token
+    from app.utils.security import verify_token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
+        )
 
     # Validar categoria existe
     categoria = db.query(Categoria).filter(Categoria.id == prestador.categoria_id).first()
@@ -151,10 +181,38 @@ def atualizar_prestador(
     prestador_id: int,
     prestador_update: PrestadorUpdate,
     db: Session = Depends(get_db),
+    authorization: str = None,
 ):
     """
     Atualizar prestador existente.
+    Admin only (requer token).
     """
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de autenticação necessário",
+        )
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Scheme inválido. Use: Authorization: Bearer <token>",
+            )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Formato de Authorization inválido",
+        )
+
+    from app.utils.security import verify_token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
+        )
 
     prestador = db.query(Prestador).filter(Prestador.id == prestador_id).first()
 
@@ -197,10 +255,38 @@ def atualizar_prestador(
 def deletar_prestador(
     prestador_id: int,
     db: Session = Depends(get_db),
+    authorization: str = None,
 ):
     """
     Deletar prestador.
+    Admin only (requer token).
     """
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de autenticação necessário",
+        )
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Scheme inválido. Use: Authorization: Bearer <token>",
+            )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Formato de Authorization inválido",
+        )
+
+    from app.utils.security import verify_token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
+        )
 
     prestador = db.query(Prestador).filter(Prestador.id == prestador_id).first()
 

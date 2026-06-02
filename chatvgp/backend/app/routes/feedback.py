@@ -13,7 +13,7 @@ from app.services.ranking_service import calcular_stats_prestador
 
 router = APIRouter(prefix="/api/feedback", tags=["feedback"])
 
-@router.get("", response_model=List[FeedbackResponse])
+@router.get("")
 def listar_feedbacks(
     prestador_id: int = None,
     condominio_id: int = None,
@@ -50,7 +50,7 @@ def listar_feedbacks(
 
     return feedbacks
 
-@router.get("/prestador/{prestador_id}", response_model=List[FeedbackResponse])
+@router.get("/prestador/{prestador_id}")
 def listar_feedbacks_prestador(
     prestador_id: int,
     condominio_id: int = None,
@@ -75,7 +75,7 @@ def listar_feedbacks_prestador(
 
     return query.offset(skip).limit(limit).all()
 
-@router.get("/stats/{prestador_id}", response_model=FeedbackStats)
+@router.get("/stats/{prestador_id}")
 def obter_stats_prestador(
     prestador_id: int,
     condominio_id: int = None,
@@ -103,7 +103,7 @@ def obter_stats_prestador(
     stats = calcular_stats_prestador(db, prestador_id, condominio_id)
     return stats
 
-@router.post("", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 def criar_feedback(
     feedback: FeedbackCreate,
     db: Session = Depends(get_db),
@@ -111,12 +111,33 @@ def criar_feedback(
 ):
     """
     Criar novo feedback.
-    Admin only (requer header Authorization).
+    Admin only (requer header Authorization: Bearer <token>).
     """
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Autenticação necessária",
+            detail="Token de autenticação necessário",
+        )
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Scheme inválido. Use: Authorization: Bearer <token>",
+            )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Formato de Authorization inválido",
+        )
+
+    from app.utils.security import verify_token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
         )
 
     # Validar se prestador existe
@@ -158,7 +179,7 @@ def criar_feedback(
 
     return novo_feedback
 
-@router.get("/{feedback_id}", response_model=FeedbackResponse)
+@router.get("/{feedback_id}")
 def obter_feedback(feedback_id: int, db: Session = Depends(get_db)):
     """Obter detalhes de um feedback (público)."""
     feedback = db.query(Feedback).filter(Feedback.id == feedback_id).first()
@@ -168,7 +189,7 @@ def obter_feedback(feedback_id: int, db: Session = Depends(get_db)):
 
     return feedback
 
-@router.put("/{feedback_id}", response_model=FeedbackResponse)
+@router.put("/{feedback_id}")
 def atualizar_feedback(
     feedback_id: int,
     feedback_update: FeedbackCreate,
@@ -177,12 +198,33 @@ def atualizar_feedback(
 ):
     """
     Atualizar feedback existente.
-    Admin only.
+    Admin only (requer token).
     """
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Autenticação necessária",
+            detail="Token de autenticação necessário",
+        )
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Scheme inválido. Use: Authorization: Bearer <token>",
+            )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Formato de Authorization inválido",
+        )
+
+    from app.utils.security import verify_token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
         )
 
     feedback = db.query(Feedback).filter(Feedback.id == feedback_id).first()
@@ -237,12 +279,33 @@ def deletar_feedback(
 ):
     """
     Deletar feedback.
-    Admin only.
+    Admin only (requer token).
     """
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Autenticação necessária",
+            detail="Token de autenticação necessário",
+        )
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Scheme inválido. Use: Authorization: Bearer <token>",
+            )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Formato de Authorization inválido",
+        )
+
+    from app.utils.security import verify_token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
         )
 
     feedback = db.query(Feedback).filter(Feedback.id == feedback_id).first()
