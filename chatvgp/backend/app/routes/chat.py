@@ -7,7 +7,7 @@ from app.models import Categoria, Condominio
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
-@router.post("/buscar", response_model=ChatResponse)
+@router.post("/buscar")
 def buscar(request: ChatRequest, db: Session = Depends(get_db)):
     """
     Endpoint principal: cliente faz pergunta e recebe lista de prestadores.
@@ -19,13 +19,13 @@ def buscar(request: ChatRequest, db: Session = Depends(get_db)):
     categoria_id, condominio_id = extrair_categoria_e_condominio(request.pergunta, db)
 
     if not categoria_id:
-        return ChatResponse(
-            pergunta=request.pergunta,
-            categoria=None,
-            condominio=None,
-            prestadores=[],
-            total_resultados=0,
-        )
+        return {
+            "pergunta": request.pergunta,
+            "categoria": None,
+            "condominio": None,
+            "prestadores": [],
+            "total_resultados": 0,
+        }
 
     # Buscar prestadores
     prestadores = buscar_prestadores(db, categoria_id, condominio_id, limit=5)
@@ -36,10 +36,10 @@ def buscar(request: ChatRequest, db: Session = Depends(get_db)):
     if condominio_id:
         condominio = db.query(Condominio).filter(Condominio.id == condominio_id).first()
 
-    return ChatResponse(
-        pergunta=request.pergunta,
-        categoria=categoria.nome if categoria else None,
-        condominio=condominio.nome if condominio else None,
-        prestadores=[PrestadorResult(**p) for p in prestadores],
-        total_resultados=len(prestadores),
-    )
+    return {
+        "pergunta": request.pergunta,
+        "categoria": categoria.nome if categoria else None,
+        "condominio": condominio.nome if condominio else None,
+        "prestadores": prestadores,
+        "total_resultados": len(prestadores),
+    }
