@@ -18,7 +18,8 @@ function App() {
     setPergunta(texto);
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/chat/buscar", {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+      const res = await fetch(`${apiUrl}/chat/buscar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pergunta: texto })
