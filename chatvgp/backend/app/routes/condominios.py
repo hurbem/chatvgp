@@ -19,7 +19,7 @@ class CondominioResponse(BaseModel):
     criado_em: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 @router.get("", response_model=List[CondominioResponse])
 def listar_condominios(cidade: str = None, db: Session = Depends(get_db)):
