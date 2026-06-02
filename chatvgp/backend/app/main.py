@@ -2,6 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 
+try:
+    from app.routes import chat, prestadores, categorias, condominios, feedback
+    routes_available = True
+except Exception as e:
+    print(f"Warning: Could not load routes: {e}")
+    routes_available = False
+
 app = FastAPI(
     title="ChatVGP API",
     description="API para ChatVGP - Busca de prestadores por IA",
@@ -16,6 +23,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Incluir rotas se disponíveis
+if routes_available:
+    app.include_router(chat.router)
+    app.include_router(prestadores.router)
+    app.include_router(categorias.router)
+    app.include_router(condominios.router)
+    app.include_router(feedback.router)
 
 @app.get("/health")
 def health():
