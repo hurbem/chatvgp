@@ -12,11 +12,15 @@ def buscar(request: ChatRequest, db: Session = Depends(get_db)):
     """
     Endpoint principal: cliente faz pergunta e recebe lista de prestadores.
     """
+    print(f"[CHAT] ➡️ Pergunta recebida: '{request.pergunta}'")
+
     if not request.pergunta:
         raise HTTPException(status_code=400, detail="Pergunta não pode estar vazia")
 
     # Extrair categoria e condomínio da pergunta
+    print(f"[CHAT] 🔍 Chamando extrair_categoria_e_condominio...")
     categoria_id, condominio_id = extrair_categoria_e_condominio(request.pergunta, db)
+    print(f"[CHAT] ✅ Resultado: categoria_id={categoria_id}, condominio_id={condominio_id}")
 
     if not categoria_id:
         return {
