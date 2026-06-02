@@ -1,6 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings, CORS_ORIGINS_LIST
+from app.database import Base, engine
+
+# Criar tabelas
+try:
+    Base.metadata.create_all(bind=engine)
+    print("✅ Tabelas criadas/verificadas com sucesso")
+except Exception as e:
+    print(f"⚠️ Aviso ao criar tabelas: {e}")
 
 try:
     from app.routes import chat, prestadores, categorias, condominios, feedback
