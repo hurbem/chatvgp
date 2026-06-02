@@ -1,11 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.database import Base, engine
 from app.routes import chat, prestadores, categorias, condominios, feedback
 
-# Criar tabelas
-Base.metadata.create_all(bind=engine)
+# Tabelas criadas via migrations/manual setup
 
 app = FastAPI(
     title="ChatVGP API",
