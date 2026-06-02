@@ -18,73 +18,47 @@ except Exception as e:
 
 def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
     """
-    Usa Claude para extrair categoria e condomínio da pergunta do usuário.
-    Retorna (categoria_id, condominio_id) ou (None, None) se não encontrar.
-    Para testes, retorna a primeira categoria e condomínio disponíveis.
+    Extrai categoria e condomínio da pergunta usando keyword matching.
+    Retorna (categoria_id, condominio_id).
     """
     categorias = db.query(Categoria).all()
     condominios = db.query(Condominio).all()
 
-    # Debug: verificar token
-    token_status = settings.CLAUDE_API_KEY[:20] + "..." if settings.CLAUDE_API_KEY else "VAZIO"
-    logger.warning(f"[EXTRACT] CLAUDE_API_KEY: {token_status}")
-    logger.warning(f"[EXTRACT] Cliente Anthropic: {client is not None}")
-    logger.warning(f"[EXTRACT] Token válido (sk-ant-): {settings.CLAUDE_API_KEY.startswith('sk-ant-')}")
-    sys.stdout.flush()
+    pergunta_lower = pergunta.lower()
 
-    # Se não há cliente Anthropic ou token inválido, retorna primeiro de cada
-    if not client or not settings.CLAUDE_API_KEY.startswith("sk-ant-"):
-        logger.warning(f"[EXTRACT] ⚠️ USANDO FALLBACK (sem Claude)")
+    # Keyword matching para categorias
+    categoria_id = None
+    for cat in categorias:
+        keywords = cat.nome.lower().split()
+        if any(kw in pergunta_lower for kw in keywords):
+            categoria_id = cat.id
+            logger.warning(f"[EXTRACT] ✅ Categoria encontrada: {cat.nome} (ID: {cat.id})")
+            sys.stdout.flush()
+            break
+
+    # Keyword matching para condomínios
+    condominio_id = None
+    for cond in condominios:
+        keywords = cond.nome.lower().split() + cond.cidade.lower().split()
+        if any(kw in pergunta_lower for kw in keywords):
+            condominio_id = cond.id
+            logger.warning(f"[EXTRACT] ✅ Condomínio encontrado: {cond.nome} (ID: {cond.id})")
+            sys.stdout.flush()
+            break
+
+    # Se não encontrou categoria, retorna a primeira
+    if not categoria_id and categorias:
+        categoria_id = categorias[0].id
+        logger.warning(f"[EXTRACT] ⚠️ Categoria não identificada, usando padrão: {categorias[0].nome}")
         sys.stdout.flush()
-        return (categorias[0].id if categorias else None,
-                condominios[0].id if condominios else None)
 
-    logger.warning(f"[EXTRACT] ✅ USANDO CLAUDE")
-    sys.stdout.flush()
-
-    categorias_str = ", ".join([f"{c.id}: {c.nome}" for c in categorias])
-    condominios_str = ", ".join([f"{c.id}: {c.nome} ({c.cidade})" for c in condominios])
-
-    prompt = f"""Analise a pergunta do usuário e extraia:
-1. A categoria de serviço (ID)
-2. O condomínio mencionado (ID), se houver
-
-Pergunta: "{pergunta}"
-
-Categorias disponíveis: {categorias_str}
-Condomínios disponíveis: {condominios_str}
-
-Responda APENAS em JSON:
-{{"categoria_id": <ID ou null>, "condominio_id": <ID ou null>}}"""
-
-    try:
-        message = client.messages.create(
-            model="claude-3-5-sonnet-20240620",
-            max_tokens=200,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        response_text = message.content[0].text
-        # Extrair JSON da resposta
-        start = response_text.find("{")
-        end = response_text.rfind("}") + 1
-        json_str = response_text[start:end]
-        result = json.loads(json_str)
-        cat_id = result.get("categoria_id")
-        cond_id = result.get("condominio_id")
-        logger.warning(f"[EXTRACT] ✅ Claude retornou: categoria_id={cat_id}, condominio_id={cond_id}")
+    # Se não encontrou condomínio, retorna o primeiro
+    if not condominio_id and condominios:
+        condominio_id = condominios[0].id
+        logger.warning(f"[EXTRACT] ⚠️ Condomínio não identificado, usando padrão: {condominios[0].nome}")
         sys.stdout.flush()
-        return cat_id, cond_id
-    except Exception as e:
-        # Fallback: retorna primeiro de cada
-        import traceback
-        logger.error(f"[EXTRACT] ❌ Erro ao chamar Claude:")
-        logger.error(f"[EXTRACT] Tipo: {type(e).__name__}")
-        logger.error(f"[EXTRACT] Mensagem: {str(e)}")
-        logger.error(f"[EXTRACT] Traceback:\n{traceback.format_exc()}")
-        logger.warning(f"[EXTRACT] ⚠️ USANDO FALLBACK por erro")
-        sys.stdout.flush()
-        return (categorias[0].id if categorias else None,
-                condominios[0].id if condominios else None)
+
+    return categoria_id, condominio_id
 
 def buscar_prestadores(
     db: Session, categoria_id: int, condominio_id: int = None, limit: int = 5
