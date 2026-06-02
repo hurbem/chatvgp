@@ -23,9 +23,6 @@ class FeedbackResponse(FeedbackBase):
     id: int
     criado_em: datetime
 
-    class Config:
-        orm_mode = True
-
 class FeedbackStats(BaseModel):
     qualidade_media: Optional[float] = None
     material_acertou_pct: Optional[float] = None

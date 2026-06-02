@@ -9,9 +9,6 @@ class CategoriaBase(BaseModel):
 class Categoria(CategoriaBase):
     id: int
 
-    class Config:
-        orm_mode = True
-
 class PrestadorBase(BaseModel):
     nome: str
     whatsapp: str
@@ -35,9 +32,6 @@ class PrestadorResponse(PrestadorBase):
     id: int
     criado_em: datetime
     categoria: Categoria
-
-    class Config:
-        orm_mode = True
 
 class PrestadorComScore(PrestadorResponse):
     score_final: float = 0
