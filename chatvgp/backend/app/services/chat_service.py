@@ -4,11 +4,16 @@ from app.config import settings
 from app.models import Prestador, Categoria, Condominio, Feedback
 from app.services.ranking_service import calcular_stats_prestador
 import json
+import logging
+import sys
+
+logger = logging.getLogger(__name__)
 
 try:
     client = Anthropic(api_key=settings.CLAUDE_API_KEY)
+    logger.warning(f"✅ Anthropic client inicializado")
 except Exception as e:
-    print(f"Erro ao inicializar Anthropic: {e}")
+    logger.error(f"❌ Erro ao inicializar Anthropic: {e}")
     client = None
 
 def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
@@ -22,17 +27,20 @@ def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
 
     # Debug: verificar token
     token_status = settings.CLAUDE_API_KEY[:20] + "..." if settings.CLAUDE_API_KEY else "VAZIO"
-    print(f"[DEBUG] CLAUDE_API_KEY: {token_status}")
-    print(f"[DEBUG] Cliente Anthropic: {client is not None}")
-    print(f"[DEBUG] Token válido (sk-ant-): {settings.CLAUDE_API_KEY.startswith('sk-ant-')}")
+    logger.warning(f"[EXTRACT] CLAUDE_API_KEY: {token_status}")
+    logger.warning(f"[EXTRACT] Cliente Anthropic: {client is not None}")
+    logger.warning(f"[EXTRACT] Token válido (sk-ant-): {settings.CLAUDE_API_KEY.startswith('sk-ant-')}")
+    sys.stdout.flush()
 
     # Se não há cliente Anthropic ou token inválido, retorna primeiro de cada
     if not client or not settings.CLAUDE_API_KEY.startswith("sk-ant-"):
-        print(f"[DEBUG] ⚠️ USANDO FALLBACK (sem Claude)")
+        logger.warning(f"[EXTRACT] ⚠️ USANDO FALLBACK (sem Claude)")
+        sys.stdout.flush()
         return (categorias[0].id if categorias else None,
                 condominios[0].id if condominios else None)
 
-    print(f"[DEBUG] ✅ USANDO CLAUDE")
+    logger.warning(f"[EXTRACT] ✅ USANDO CLAUDE")
+    sys.stdout.flush()
 
     categorias_str = ", ".join([f"{c.id}: {c.nome}" for c in categorias])
     condominios_str = ", ".join([f"{c.id}: {c.nome} ({c.cidade})" for c in condominios])
@@ -63,12 +71,14 @@ Responda APENAS em JSON:
         result = json.loads(json_str)
         cat_id = result.get("categoria_id")
         cond_id = result.get("condominio_id")
-        print(f"[DEBUG] ✅ Claude retornou: categoria_id={cat_id}, condominio_id={cond_id}")
+        logger.warning(f"[EXTRACT] ✅ Claude retornou: categoria_id={cat_id}, condominio_id={cond_id}")
+        sys.stdout.flush()
         return cat_id, cond_id
     except Exception as e:
         # Fallback: retorna primeiro de cada
-        print(f"[DEBUG] ❌ Erro ao chamar Claude: {type(e).__name__}: {e}")
-        print(f"[DEBUG] ⚠️ USANDO FALLBACK por erro")
+        logger.error(f"[EXTRACT] ❌ Erro ao chamar Claude: {type(e).__name__}: {e}")
+        logger.warning(f"[EXTRACT] ⚠️ USANDO FALLBACK por erro")
+        sys.stdout.flush()
         return (categorias[0].id if categorias else None,
                 condominios[0].id if condominios else None)
 

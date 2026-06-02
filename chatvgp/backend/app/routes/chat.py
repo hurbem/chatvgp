@@ -1,9 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+import logging
+import sys
 from app.database import get_db
 from app.schemas.chat import ChatRequest, ChatResponse, PrestadorResult
 from app.services.chat_service import extrair_categoria_e_condominio, buscar_prestadores
 from app.models import Categoria, Condominio
+
+# Configurar logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(levelname)s] %(message)s',
+    stream=sys.stdout,
+    force=True
+)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -12,15 +23,18 @@ def buscar(request: ChatRequest, db: Session = Depends(get_db)):
     """
     Endpoint principal: cliente faz pergunta e recebe lista de prestadores.
     """
-    print(f"[CHAT] ➡️ Pergunta recebida: '{request.pergunta}'")
+    logger.warning(f"[CHAT] ➡️ Pergunta recebida: '{request.pergunta}'")
+    sys.stdout.flush()
 
     if not request.pergunta:
         raise HTTPException(status_code=400, detail="Pergunta não pode estar vazia")
 
     # Extrair categoria e condomínio da pergunta
-    print(f"[CHAT] 🔍 Chamando extrair_categoria_e_condominio...")
+    logger.warning(f"[CHAT] 🔍 Chamando extrair_categoria_e_condominio...")
+    sys.stdout.flush()
     categoria_id, condominio_id = extrair_categoria_e_condominio(request.pergunta, db)
-    print(f"[CHAT] ✅ Resultado: categoria_id={categoria_id}, condominio_id={condominio_id}")
+    logger.warning(f"[CHAT] ✅ Resultado: categoria_id={categoria_id}, condominio_id={condominio_id}")
+    sys.stdout.flush()
 
     if not categoria_id:
         return {
