@@ -17,7 +17,7 @@ class CategoriaResponse(BaseModel):
     descricao: str = None
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 @router.get("", response_model=List[CategoriaResponse])
 def listar_categorias(db: Session = Depends(get_db)):
