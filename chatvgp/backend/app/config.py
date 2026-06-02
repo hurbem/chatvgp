@@ -10,10 +10,13 @@ class Settings(BaseSettings):
     CLAUDE_API_KEY: str = os.getenv("CLAUDE_API_KEY", "sk-placeholder")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     DEBUG: bool = os.getenv("DEBUG", "True") == "True"
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000", "http://localhost:5173", "https://chatvgp.vercel.app"]
 
     class Config:
         case_sensitive = True
+
+# Parse CORS_ORIGINS from env (comma-separated string)
+cors_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000,http://localhost:5173")
+CORS_ORIGINS_LIST = [url.strip() for url in cors_env.split(",") if url.strip()]
 
 try:
     settings = Settings()

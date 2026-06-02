@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import settings
+from app.config import settings, CORS_ORIGINS_LIST
 
 try:
     from app.routes import chat, prestadores, categorias, condominios, feedback
@@ -18,7 +18,7 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=CORS_ORIGINS_LIST,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
