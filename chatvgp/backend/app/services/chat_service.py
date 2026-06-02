@@ -76,7 +76,11 @@ Responda APENAS em JSON:
         return cat_id, cond_id
     except Exception as e:
         # Fallback: retorna primeiro de cada
-        logger.error(f"[EXTRACT] ❌ Erro ao chamar Claude: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(f"[EXTRACT] ❌ Erro ao chamar Claude:")
+        logger.error(f"[EXTRACT] Tipo: {type(e).__name__}")
+        logger.error(f"[EXTRACT] Mensagem: {str(e)}")
+        logger.error(f"[EXTRACT] Traceback:\n{traceback.format_exc()}")
         logger.warning(f"[EXTRACT] ⚠️ USANDO FALLBACK por erro")
         sys.stdout.flush()
         return (categorias[0].id if categorias else None,
