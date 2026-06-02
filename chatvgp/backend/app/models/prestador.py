@@ -17,7 +17,7 @@ class Prestador(Base):
     notas: Optional[str] = Column(Text)
 
     # Relationship
-    categoria = relationship("Categoria")
+    categoria: Optional['Categoria'] = relationship("Categoria")
 
     def __repr__(self):
         return f"<Prestador(id={self.id}, nome={self.nome}, status={self.status})>"

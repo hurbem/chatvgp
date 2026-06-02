@@ -22,9 +22,9 @@ class Feedback(Base):
     criado_em: Optional[datetime] = Column(DateTime, server_default=func.now())
 
     # Relationships
-    prestador = relationship("Prestador")
-    condominio = relationship("Condominio")
-    categoria = relationship("Categoria")
+    prestador: Optional['Prestador'] = relationship("Prestador")
+    condominio: Optional['Condominio'] = relationship("Condominio")
+    categoria: Optional['Categoria'] = relationship("Categoria")
 
     def __repr__(self):
         return f"<Feedback(id={self.id}, prestador_id={self.prestador_id}, qualidade={self.qualidade})>"
