@@ -10,7 +10,7 @@ class Categoria(CategoriaBase):
     id: int
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class PrestadorBase(BaseModel):
     nome: str
@@ -37,7 +37,7 @@ class PrestadorResponse(PrestadorBase):
     categoria: Categoria
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class PrestadorComScore(PrestadorResponse):
     score_final: float = 0

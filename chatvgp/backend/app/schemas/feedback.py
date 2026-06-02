@@ -24,7 +24,7 @@ class FeedbackResponse(FeedbackBase):
     criado_em: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class FeedbackStats(BaseModel):
     qualidade_media: Optional[float] = None
