@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements-render.txt
 
 COPY chatvgp/backend .
 
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:$PORT", "app.main:app", "--worker-class", "uvicorn.workers.UvicornWorker"]
+CMD sh -c 'gunicorn -w 4 -b 0.0.0.0:$PORT app.main:app --worker-class uvicorn.workers.UvicornWorker'
