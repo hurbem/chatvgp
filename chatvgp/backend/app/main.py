@@ -1,9 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routes import chat, prestadores, categorias, condominios, feedback
-
-# Tabelas criadas via migrations/manual setup
 
 app = FastAPI(
     title="ChatVGP API",
@@ -19,13 +16,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Incluir rotas
-app.include_router(chat.router)
-app.include_router(prestadores.router)
-app.include_router(categorias.router)
-app.include_router(condominios.router)
-app.include_router(feedback.router)
 
 @app.get("/health")
 def health():
