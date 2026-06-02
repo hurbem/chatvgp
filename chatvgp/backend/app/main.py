@@ -3,6 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings, CORS_ORIGINS_LIST
 from app.database import Base, engine
 
+# Importar models para registrar no Base
+try:
+    from app.models import Categoria, Condominio, Prestador, Feedback, Usuario
+    print("✅ Models importados")
+except Exception as e:
+    print(f"⚠️ Aviso ao importar models: {e}")
+
 # Criar tabelas
 try:
     Base.metadata.create_all(bind=engine)
