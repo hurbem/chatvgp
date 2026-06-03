@@ -36,7 +36,7 @@ except Exception as e:
     print(f"⚠️ Aviso ao criar tabelas: {e}")
 
 try:
-    from app.routes import chat, prestadores, categorias, condominios, feedback, auth
+    from app.routes import chat, prestadores, categorias, condominios, feedback, auth, logs
     routes_available = True
 except Exception as e:
     print(f"Warning: Could not load routes: {e}")
@@ -79,6 +79,7 @@ if routes_available:
     app.include_router(categorias.router)
     app.include_router(condominios.router)
     app.include_router(feedback.router)
+    app.include_router(logs.router)
 
 @app.get("/health")
 def health():
