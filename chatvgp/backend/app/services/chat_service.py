@@ -33,17 +33,9 @@ def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
             condominio_id = cond.id
             break
 
-    # Se não encontrou categoria, registra log e retorna primeira como fallback
+    # Se não encontrou categoria, registra log e retorna None
     if not categoria_id:
-        logger.warning(f"[BUSCA] Categoria não identificada. Pergunta: '{pergunta}' | Usando fallback: primeira categoria")
-        if categorias:
-            categoria_id = categorias[0].id
-        else:
-            logger.error(f"[BUSCA] Nenhuma categoria disponível no banco de dados!")
-
-    # Se não encontrou condomínio, retorna o primeiro
-    if not condominio_id and condominios:
-        condominio_id = condominios[0].id
+        logger.warning(f"[BUSCA] Categoria não identificada. Pergunta: '{pergunta}'")
 
     return categoria_id, condominio_id
 
