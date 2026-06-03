@@ -219,7 +219,17 @@ def criar_prestador(
     db.commit()
     db.refresh(novo_prestador)
 
-    return novo_prestador
+    return {
+        "id": novo_prestador.id,
+        "nome": novo_prestador.nome,
+        "whatsapp": novo_prestador.whatsapp,
+        "instagram": novo_prestador.instagram,
+        "site": novo_prestador.site,
+        "categoria_id": novo_prestador.categoria_id,
+        "status": novo_prestador.status,
+        "notas": novo_prestador.notas,
+        "criado_em": novo_prestador.criado_em.isoformat() if novo_prestador.criado_em else None,
+    }
 
 @router.put("/{prestador_id}")
 def atualizar_prestador(

@@ -2,6 +2,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings, CORS_ORIGINS_LIST
 from app.database import Base, engine
+import logging
+import sys
+
+# Configurar logging para capturar logs de pesquisas
+logging.basicConfig(
+    level=logging.WARNING,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('logs/chatvgp.log', mode='a')
+    ]
+)
 
 # Importar models para registrar no Base
 try:
@@ -46,6 +58,12 @@ async def run_migrations():
     try:
         import sys
         import os
+
+        # Criar diretório de logs se não existir
+        logs_dir = "logs"
+        if not os.path.exists(logs_dir):
+            os.makedirs(logs_dir)
+
         sys.path.insert(0, os.path.dirname(__file__) + "/..")
 
         from migrations.migrations_001_refactor_prestador import run_migration
