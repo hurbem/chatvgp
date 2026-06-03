@@ -9,6 +9,8 @@ class Prestador(Base):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String(255), nullable=False, index=True)
     whatsapp = Column(String(20), nullable=False)
+    instagram = Column(String(500), nullable=True)  # URL do perfil Instagram
+    site = Column(String(500), nullable=True)  # Endereço web
     categoria_id = Column(Integer, ForeignKey("categorias.id"), nullable=False, index=True)
     status = Column(String(20), default="ativo", index=True)  # 'ativo', 'inativo'
     criado_em = Column(DateTime, server_default=func.now())

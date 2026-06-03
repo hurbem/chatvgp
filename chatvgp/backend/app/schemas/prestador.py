@@ -12,6 +12,8 @@ class Categoria(CategoriaBase):
 class PrestadorBase(BaseModel):
     nome: str
     whatsapp: str
+    instagram: Optional[str] = None
+    site: Optional[str] = None
     categoria_id: int
     status: str = "ativo"
     notas: Optional[str] = None
@@ -22,6 +24,8 @@ class PrestadorCreate(PrestadorBase):
 class PrestadorUpdate(BaseModel):
     nome: Optional[str] = None
     whatsapp: Optional[str] = None
+    instagram: Optional[str] = None
+    site: Optional[str] = None
     categoria_id: Optional[int] = None
     status: Optional[str] = None
     notas: Optional[str] = None
