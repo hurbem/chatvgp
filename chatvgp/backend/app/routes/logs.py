@@ -1,66 +1,68 @@
-from fastapi import APIRouter, HTTPException
-import os
-import re
-from datetime import datetime
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models import Log
+from sqlalchemy import desc
 
 router = APIRouter(prefix="/api/logs", tags=["logs"])
 
 @router.get("/buscas-nao-identificadas")
-def buscas_nao_identificadas(limit: int = 100):
+def buscas_nao_identificadas(limit: int = 100, db: Session = Depends(get_db)):
     """
     Retorna as últimas pesquisas que não tiveram categoria identificada.
     Público (sem autenticação).
     """
-    logs_file = "logs/chatvgp.log"
+    try:
+        logs = db.query(Log).filter(
+            Log.tipo == "CATEGORIA_NAO_IDENTIFICADA"
+        ).order_by(desc(Log.criado_em)).limit(limit).all()
 
-    # Verificar se arquivo de logs existe
-    if not os.path.exists(logs_file):
         return {
-            "total": 0,
-            "logs": [],
-            "mensagem": "Nenhum log encontrado ainda"
+            "total": len(logs),
+            "limit": limit,
+            "logs": [
+                {
+                    "id": log.id,
+                    "timestamp": log.criado_em.isoformat() if log.criado_em else None,
+                    "pergunta": log.pergunta,
+                    "tipo": log.tipo,
+                    "mensagem": log.mensagem
+                }
+                for log in logs
+            ]
         }
 
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao ler logs: {str(e)}"
+        )
+
+@router.get("/buscas-sucesso")
+def buscas_com_sucesso(limit: int = 100, db: Session = Depends(get_db)):
+    """
+    Retorna as últimas pesquisas que tiveram categoria identificada com sucesso.
+    Público (sem autenticação).
+    """
     try:
-        # Ler arquivo de logs
-        with open(logs_file, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-
-        # Filtrar linhas com "[BUSCA] Categoria não identificada"
-        buscas_nao_identificadas = []
-
-        for line in lines:
-            if "[BUSCA] Categoria não identificada" in line:
-                # Extrair informações da linha
-                # Formato: 2026-06-03 16:35:45,123 - app.services.chat_service - WARNING - [BUSCA] Categoria não identificada. Pergunta: 'preciso de um unicórnio'
-
-                try:
-                    # Extrair timestamp
-                    timestamp_match = re.search(r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', line)
-                    timestamp = timestamp_match.group(1) if timestamp_match else None
-
-                    # Extrair pergunta entre aspas simples
-                    pergunta_match = re.search(r"Pergunta: '([^']+)'", line)
-                    pergunta = pergunta_match.group(1) if pergunta_match else "desconhecida"
-
-                    buscas_nao_identificadas.append({
-                        "timestamp": timestamp,
-                        "pergunta": pergunta,
-                        "tipo": "CATEGORIA_NAO_IDENTIFICADA"
-                    })
-                except Exception as e:
-                    continue
-
-        # Reverter para mostrar mais recentes primeiro
-        buscas_nao_identificadas.reverse()
-
-        # Limitar resultados
-        buscas_nao_identificadas = buscas_nao_identificadas[:limit]
+        logs = db.query(Log).filter(
+            Log.tipo == "BUSCA_SUCESSO"
+        ).order_by(desc(Log.criado_em)).limit(limit).all()
 
         return {
-            "total": len(buscas_nao_identificadas),
+            "total": len(logs),
             "limit": limit,
-            "logs": buscas_nao_identificadas
+            "logs": [
+                {
+                    "id": log.id,
+                    "timestamp": log.criado_em.isoformat() if log.criado_em else None,
+                    "pergunta": log.pergunta,
+                    "categoria": log.categoria_encontrada,
+                    "condominio": log.condominio_encontrado,
+                    "tipo": log.tipo
+                }
+                for log in logs
+            ]
         }
 
     except Exception as e:
@@ -70,36 +72,56 @@ def buscas_nao_identificadas(limit: int = 100):
         )
 
 @router.get("/todas")
-def todos_os_logs(limit: int = 100):
+def todos_os_logs(limit: int = 100, db: Session = Depends(get_db)):
     """
     Retorna todos os logs da aplicação.
     Público (sem autenticação).
     """
-    logs_file = "logs/chatvgp.log"
-
-    if not os.path.exists(logs_file):
-        return {
-            "total": 0,
-            "logs": [],
-            "mensagem": "Nenhum log encontrado ainda"
-        }
-
     try:
-        with open(logs_file, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-
-        # Pegar últimas linhas (mais recentes)
-        lines = lines[-limit:]
-        lines.reverse()
+        logs = db.query(Log).order_by(desc(Log.criado_em)).limit(limit).all()
 
         return {
-            "total": len(lines),
+            "total": len(logs),
             "limit": limit,
-            "logs": lines
+            "logs": [
+                {
+                    "id": log.id,
+                    "timestamp": log.criado_em.isoformat() if log.criado_em else None,
+                    "tipo": log.tipo,
+                    "pergunta": log.pergunta,
+                    "categoria": log.categoria_encontrada,
+                    "condominio": log.condominio_encontrado,
+                    "mensagem": log.mensagem
+                }
+                for log in logs
+            ]
         }
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Erro ao ler logs: {str(e)}"
+        )
+
+@router.get("/estatisticas")
+def estatisticas_logs(db: Session = Depends(get_db)):
+    """
+    Retorna estatísticas gerais dos logs.
+    """
+    try:
+        total_logs = db.query(Log).count()
+        nao_identificadas = db.query(Log).filter(Log.tipo == "CATEGORIA_NAO_IDENTIFICADA").count()
+        sucesso = db.query(Log).filter(Log.tipo == "BUSCA_SUCESSO").count()
+
+        return {
+            "total_logs": total_logs,
+            "buscas_nao_identificadas": nao_identificadas,
+            "buscas_com_sucesso": sucesso,
+            "taxa_sucesso_pct": round((sucesso / total_logs * 100), 2) if total_logs > 0 else 0
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao calcular estatísticas: {str(e)}"
         )

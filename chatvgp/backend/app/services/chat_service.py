@@ -1,16 +1,35 @@
 from sqlalchemy.orm import Session
 from app.config import settings
-from app.models import Prestador, Categoria, Condominio, Feedback
+from app.models import Prestador, Categoria, Condominio, Feedback, Log
 from app.services.ranking_service import calcular_stats_prestador
 import json
 import logging
 
 logger = logging.getLogger(__name__)
 
+def registrar_log(db: Session, tipo: str, pergunta: str = None, categoria: str = None, condominio: str = None, mensagem: str = None):
+    """
+    Registra um log de busca no banco de dados.
+    """
+    try:
+        novo_log = Log(
+            tipo=tipo,
+            pergunta=pergunta,
+            categoria_encontrada=categoria,
+            condominio_encontrado=condominio,
+            mensagem=mensagem
+        )
+        db.add(novo_log)
+        db.commit()
+    except Exception as e:
+        logger.error(f"Erro ao registrar log: {e}")
+        # Continua mesmo se falhar a gravação de log
+
 def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
     """
     Extrai categoria e condomínio da pergunta usando keyword matching.
     Retorna (categoria_id, condominio_id).
+    Registra logs de pesquisas não identificadas no banco.
     """
     categorias = db.query(Categoria).all()
     condominios = db.query(Condominio).all()
@@ -19,23 +38,42 @@ def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
 
     # Keyword matching para categorias
     categoria_id = None
+    categoria_nome = None
     for cat in categorias:
         keywords = cat.nome.lower().split()
         if any(kw in pergunta_lower for kw in keywords):
             categoria_id = cat.id
+            categoria_nome = cat.nome
             break
 
     # Keyword matching para condomínios
     condominio_id = None
+    condominio_nome = None
     for cond in condominios:
         keywords = cond.nome.lower().split() + cond.cidade.lower().split()
         if any(kw in pergunta_lower for kw in keywords):
             condominio_id = cond.id
+            condominio_nome = cond.nome
             break
 
     # Se não encontrou categoria, registra log e retorna None
     if not categoria_id:
         logger.warning(f"[BUSCA] Categoria não identificada. Pergunta: '{pergunta}'")
+        registrar_log(
+            db,
+            tipo="CATEGORIA_NAO_IDENTIFICADA",
+            pergunta=pergunta,
+            mensagem="Nenhuma categoria foi identificada na pergunta"
+        )
+    else:
+        # Registra busca bem-sucedida
+        registrar_log(
+            db,
+            tipo="BUSCA_SUCESSO",
+            pergunta=pergunta,
+            categoria=categoria_nome,
+            condominio=condominio_nome
+        )
 
     return categoria_id, condominio_id
 

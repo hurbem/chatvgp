@@ -23,7 +23,7 @@ logging.basicConfig(
 
 # Importar models para registrar no Base
 try:
-    from app.models import Categoria, Condominio, Prestador, Feedback, Usuario
+    from app.models import Categoria, Condominio, Prestador, Feedback, Usuario, Log
     print("✅ Models importados")
 except Exception as e:
     print(f"⚠️ Aviso ao importar models: {e}")
