@@ -4,6 +4,12 @@ from app.config import settings, CORS_ORIGINS_LIST
 from app.database import Base, engine
 import logging
 import sys
+import os
+
+# Criar diretório de logs se não existir
+logs_dir = "logs"
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)
 
 # Configurar logging para capturar logs de pesquisas
 logging.basicConfig(
@@ -56,14 +62,6 @@ app.add_middleware(
 async def run_migrations():
     """Executa migrações pendentes no startup"""
     try:
-        import sys
-        import os
-
-        # Criar diretório de logs se não existir
-        logs_dir = "logs"
-        if not os.path.exists(logs_dir):
-            os.makedirs(logs_dir)
-
         sys.path.insert(0, os.path.dirname(__file__) + "/..")
 
         from migrations.migrations_001_refactor_prestador import run_migration
