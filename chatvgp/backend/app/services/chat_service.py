@@ -3,6 +3,9 @@ from app.config import settings
 from app.models import Prestador, Categoria, Condominio, Feedback
 from app.services.ranking_service import calcular_stats_prestador
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
     """
@@ -30,9 +33,13 @@ def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
             condominio_id = cond.id
             break
 
-    # Se não encontrou categoria, retorna a primeira
-    if not categoria_id and categorias:
-        categoria_id = categorias[0].id
+    # Se não encontrou categoria, registra log e retorna primeira como fallback
+    if not categoria_id:
+        logger.warning(f"[BUSCA] Categoria não identificada. Pergunta: '{pergunta}' | Usando fallback: primeira categoria")
+        if categorias:
+            categoria_id = categorias[0].id
+        else:
+            logger.error(f"[BUSCA] Nenhuma categoria disponível no banco de dados!")
 
     # Se não encontrou condomínio, retorna o primeiro
     if not condominio_id and condominios:

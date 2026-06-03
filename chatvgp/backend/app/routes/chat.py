@@ -21,6 +21,7 @@ def buscar(request: ChatRequest, db: Session = Depends(get_db)):
     if not categoria_id:
         return {
             "pergunta": request.pergunta,
+            "mensagem": "Nenhum prestador encontrado para essa busca.",
             "categoria": None,
             "condominio": None,
             "prestadores": [],
@@ -36,10 +37,16 @@ def buscar(request: ChatRequest, db: Session = Depends(get_db)):
     if condominio_id:
         condominio = db.query(Condominio).filter(Condominio.id == condominio_id).first()
 
-    return {
+    response = {
         "pergunta": request.pergunta,
         "categoria": categoria.nome if categoria else None,
         "condominio": condominio.nome if condominio else None,
         "prestadores": prestadores,
         "total_resultados": len(prestadores),
     }
+
+    # Adicionar mensagem se não encontrou prestadores
+    if not prestadores:
+        response["mensagem"] = "Nenhum prestador encontrado para essa busca."
+
+    return response
