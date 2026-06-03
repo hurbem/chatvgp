@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -163,7 +163,7 @@ def obter_prestador(prestador_id: int, db: Session = Depends(get_db)):
 def criar_prestador(
     prestador: PrestadorCreate,
     db: Session = Depends(get_db),
-    authorization: str = None,
+    authorization: str = Header(None),
 ):
     """
     Criar novo prestador.
@@ -226,7 +226,7 @@ def atualizar_prestador(
     prestador_id: int,
     prestador_update: PrestadorUpdate,
     db: Session = Depends(get_db),
-    authorization: str = None,
+    authorization: str = Header(None),
 ):
     """
     Atualizar prestador existente.
@@ -301,7 +301,7 @@ def atualizar_prestador(
 def deletar_prestador(
     prestador_id: int,
     db: Session = Depends(get_db),
-    authorization: str = None,
+    authorization: str = Header(None),
 ):
     """
     Deletar prestador.

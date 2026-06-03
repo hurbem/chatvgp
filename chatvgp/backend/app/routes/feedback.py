@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import List
@@ -107,7 +107,7 @@ def obter_stats_prestador(
 def criar_feedback(
     feedback: FeedbackCreate,
     db: Session = Depends(get_db),
-    authorization: str = None,
+    authorization: str = Header(None),
 ):
     """
     Criar novo feedback.
@@ -194,7 +194,7 @@ def atualizar_feedback(
     feedback_id: int,
     feedback_update: FeedbackCreate,
     db: Session = Depends(get_db),
-    authorization: str = None,
+    authorization: str = Header(None),
 ):
     """
     Atualizar feedback existente.
@@ -275,7 +275,7 @@ def atualizar_feedback(
 def deletar_feedback(
     feedback_id: int,
     db: Session = Depends(get_db),
-    authorization: str = None,
+    authorization: str = Header(None),
 ):
     """
     Deletar feedback.
