@@ -1,5 +1,4 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text
-from sqlalchemy.utils import CamelCase
 from app.database import Base
 from datetime import datetime
 
