@@ -8,6 +8,16 @@ function App() {
   const [currentPage, setCurrentPage] = useState<"chat" | "indicar" | "admin">("chat");
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [loginData, setLoginData] = useState({ token: "" });
+  const [version, setVersion] = useState(() => {
+    const saved = localStorage.getItem("appVersion");
+    return saved ? parseInt(saved) : 1;
+  });
+
+  const incrementVersion = () => {
+    const newVersion = version + 1;
+    setVersion(newVersion);
+    localStorage.setItem("appVersion", newVersion.toString());
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,6 +27,7 @@ function App() {
       setCurrentPage("admin");
       setShowLoginForm(false);
       setLoginData({ token: "" });
+      incrementVersion();
     }
   };
 
@@ -41,7 +52,10 @@ function App() {
       }}>
         {currentPage !== "chat" && (
           <button
-            onClick={() => setCurrentPage("chat")}
+            onClick={() => {
+              setCurrentPage("chat");
+              incrementVersion();
+            }}
             style={{
               padding: "10px 16px",
               backgroundColor: "#2563eb",
@@ -58,7 +72,10 @@ function App() {
         )}
         {currentPage !== "indicar" && (
           <button
-            onClick={() => setCurrentPage("indicar")}
+            onClick={() => {
+              setCurrentPage("indicar");
+              incrementVersion();
+            }}
             style={{
               padding: "10px 16px",
               backgroundColor: "#16a34a",
@@ -90,6 +107,26 @@ function App() {
             🔐 Admin
           </button>
         )}
+
+        {/* Version Display */}
+        <div
+          onClick={incrementVersion}
+          style={{
+            padding: "6px 12px",
+            backgroundColor: "#6b7280",
+            color: "white",
+            borderRadius: "9999px",
+            fontSize: "12px",
+            fontWeight: "500",
+            textAlign: "center",
+            cursor: "pointer",
+            userSelect: "none",
+            marginTop: "8px"
+          }}
+          title="Clique para incrementar versão"
+        >
+          v{version}
+        </div>
       </div>
 
       {/* Login Modal */}
