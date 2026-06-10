@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ChatPage } from "./pages/ChatPage";
 import { AdminPage } from "./pages/AdminPage";
-import IndicarProfissional from "./pages/IndicarProfissional";
+import IndicarProfissional from "./pages/IndicarProfissional.tsx";
 
 function App() {
   const [isAdmin, setIsAdmin] = useState(!!localStorage.getItem("token"));
