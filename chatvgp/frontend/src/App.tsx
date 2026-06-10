@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { ChatPage } from "./pages/ChatPage";
 import { AdminPage } from "./pages/AdminPage";
+import IndicarProfissional from "./pages/IndicarProfissional";
 
 function App() {
   const [isAdmin, setIsAdmin] = useState(!!localStorage.getItem("token"));
+  const [currentPage, setCurrentPage] = useState<"chat" | "indicar" | "admin">("chat");
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [loginData, setLoginData] = useState({ token: "" });
 
@@ -12,9 +14,16 @@ function App() {
     if (loginData.token.trim()) {
       localStorage.setItem("token", loginData.token);
       setIsAdmin(true);
+      setCurrentPage("admin");
       setShowLoginForm(false);
       setLoginData({ token: "" });
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsAdmin(false);
+    setCurrentPage("chat");
   };
 
   if (isAdmin) {
@@ -23,17 +32,36 @@ function App() {
 
   return (
     <>
-      <ChatPage />
+      {currentPage === "chat" && <ChatPage />}
+      {currentPage === "indicar" && <IndicarProfissional />}
 
-      {/* Floating Button para Admin */}
-      {!showLoginForm && (
-        <button
-          onClick={() => setShowLoginForm(true)}
-          className="fixed bottom-6 right-6 px-4 py-2 bg-gray-800 text-white rounded-full font-medium hover:bg-gray-900 transition shadow-lg"
-        >
-          🔐 Admin
-        </button>
-      )}
+      {/* Navigation Buttons */}
+      <div className="fixed bottom-6 right-6 flex flex-col gap-2">
+        {currentPage !== "chat" && (
+          <button
+            onClick={() => setCurrentPage("chat")}
+            className="px-4 py-2 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition shadow-lg"
+          >
+            💬 Chat
+          </button>
+        )}
+        {currentPage !== "indicar" && (
+          <button
+            onClick={() => setCurrentPage("indicar")}
+            className="px-4 py-2 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition shadow-lg"
+          >
+            ⭐ Indicar
+          </button>
+        )}
+        {!showLoginForm && (
+          <button
+            onClick={() => setShowLoginForm(true)}
+            className="px-4 py-2 bg-gray-800 text-white rounded-full font-medium hover:bg-gray-900 transition shadow-lg"
+          >
+            🔐 Admin
+          </button>
+        )}
+      </div>
 
       {/* Login Modal */}
       {showLoginForm && (

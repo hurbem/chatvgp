@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from typing import List
+from typing import List, Optional
+from pydantic import BaseModel
 from app.database import get_db
-from app.models import Feedback, Prestador, Condominio, Categoria
+from app.models import Feedback, Prestador, Condominio, Categoria, Log
 from app.schemas.feedback import (
     FeedbackCreate,
     FeedbackResponse,
@@ -12,6 +13,53 @@ from app.schemas.feedback import (
 from app.services.ranking_service import calcular_stats_prestador
 
 router = APIRouter(prefix="/api/feedback", tags=["feedback"])
+
+# Schemas para indicação
+class IndicacaoCreate(BaseModel):
+    condominio_id: int
+    nome_morador: str
+    whatsapp_morador: str
+    prestador_id: Optional[int] = None
+    prestador_nome: str
+    categoria_id: int
+    whatsapp_prestador: str
+    instagram: Optional[str] = None
+    site: Optional[str] = None
+    notas: Optional[str] = None
+
+@router.post("/indicacoes", status_code=status.HTTP_201_CREATED)
+def registrar_indicacao(
+    indicacao: IndicacaoCreate,
+    db: Session = Depends(get_db),
+):
+    """
+    Registra uma indicação de profissional.
+    Público (sem autenticação).
+    """
+    try:
+        # Registrar log da indicação
+        novo_log = Log(
+            tipo="INDICACAO_PROFISSIONAL",
+            pergunta=f"Indicação de {indicacao.prestador_nome}",
+            categoria_encontrada=None,
+            condominio_encontrado=None,
+            mensagem=f"Indicador: {indicacao.nome_morador} | Condominio: {indicacao.condominio_id} | Prestador: {indicacao.prestador_nome} ({indicacao.whatsapp_prestador})"
+        )
+        db.add(novo_log)
+        db.commit()
+
+        return {
+            "success": True,
+            "message": "Indicação registrada com sucesso",
+            "log_id": novo_log.id
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao registrar indicação: {str(e)}"
+        )
 
 @router.get("")
 def listar_feedbacks(
