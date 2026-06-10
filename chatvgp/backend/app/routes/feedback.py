@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import List, Optional
 from pydantic import BaseModel
+from datetime import datetime
 from app.database import get_db
-from app.models import Feedback, Prestador, Condominio, Categoria, Log
+from app.models import Feedback, Prestador, Condominio, Categoria, Log, FeedbackLink
 from app.schemas.feedback import (
     FeedbackCreate,
     FeedbackResponse,
@@ -25,6 +26,25 @@ class IndicacaoCreate(BaseModel):
     whatsapp_prestador: str
     instagram: Optional[str] = None
     site: Optional[str] = None
+    notas: Optional[str] = None
+
+# Schemas para links de feedback
+class FeedbackLinkResponse(BaseModel):
+    id: int
+    prestador_id: int
+    token: str
+    expirado_em: str
+    usado: bool
+    criado_em: str
+    link_completo: str
+
+class FeedbackViaLink(BaseModel):
+    condominio_id: int
+    qualidade: int  # 1-5
+    material_estimativa: str
+    prazo_manteve: bool
+    custo_manteve: bool
+    seu_feedback: bool = True
     notas: Optional[str] = None
 
 @router.post("/indicacoes", status_code=status.HTTP_201_CREATED)
@@ -60,6 +80,227 @@ def registrar_indicacao(
             status_code=500,
             detail=f"Erro ao registrar indicação: {str(e)}"
         )
+
+@router.post("/gerar-link/{prestador_id}", status_code=status.HTTP_201_CREATED)
+def gerar_link_feedback(
+    prestador_id: int,
+    db: Session = Depends(get_db),
+    authorization: str = Header(None),
+):
+    """
+    Gera um link personalizado de feedback para um prestador.
+    Admin only (requer token).
+    Link expira em 7 dias e pode ser usado apenas uma vez.
+    """
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de autenticação necessário",
+        )
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Scheme inválido. Use: Authorization: Bearer <token>",
+            )
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Formato de Authorization inválido",
+        )
+
+    from app.utils.security import verify_token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
+        )
+
+    # Verificar se prestador existe
+    prestador = db.query(Prestador).filter(Prestador.id == prestador_id).first()
+    if not prestador:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prestador não encontrado",
+        )
+
+    # Gerar novo link de feedback
+    novo_link = FeedbackLink(
+        prestador_id=prestador_id,
+        token=FeedbackLink.gerar_token(),
+        expirado_em=FeedbackLink.gerar_link_expiracao(),
+    )
+    db.add(novo_link)
+    db.commit()
+    db.refresh(novo_link)
+
+    link_completo = f"https://api.chatvgp.com/api/feedback/enviar/{novo_link.token}"
+
+    return {
+        "id": novo_link.id,
+        "prestador_id": novo_link.prestador_id,
+        "token": novo_link.token,
+        "expirado_em": novo_link.expirado_em.isoformat(),
+        "usado": novo_link.usado,
+        "criado_em": novo_link.criado_em.isoformat(),
+        "link_completo": link_completo,
+        "mensagem": "Link gerado com sucesso. Validade: 7 dias. Uso único.",
+    }
+
+@router.get("/enviar/{token}")
+def obter_formulario_feedback(
+    token: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Obtém o formulário de feedback usando um link personalizado.
+    Público (sem autenticação).
+    Valida o token antes de exibir o formulário.
+    """
+    # Buscar o link
+    feedback_link = db.query(FeedbackLink).filter(FeedbackLink.token == token).first()
+
+    if not feedback_link:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Link de feedback inválido ou não encontrado",
+        )
+
+    # Validar se o link é válido
+    if not feedback_link.esta_valido():
+        if feedback_link.usado:
+            raise HTTPException(
+                status_code=status.HTTP_410_GONE,
+                detail="Este link já foi utilizado uma vez",
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_410_GONE,
+                detail="Este link expirou",
+            )
+
+    # Buscar dados do prestador
+    prestador = db.query(Prestador).filter(Prestador.id == feedback_link.prestador_id).first()
+    if not prestador:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prestador não encontrado",
+        )
+
+    # Buscar condominios para o dropdown
+    condominios = db.query(Condominio).all()
+
+    return {
+        "success": True,
+        "token": token,
+        "prestador": {
+            "id": prestador.id,
+            "nome": prestador.nome,
+            "categoria": prestador.categoria.nome,
+        },
+        "condominios": [
+            {"id": c.id, "nome": f"{c.nome} - {c.cidade}"} for c in condominios
+        ],
+        "form_fields": {
+            "condominio_id": {"type": "select", "label": "Seu condomínio", "required": True},
+            "qualidade": {"type": "number", "label": "Qualidade do trabalho (1-5)", "min": 1, "max": 5, "required": True},
+            "material_estimativa": {"type": "select", "label": "Material/Estimativa", "required": True, "options": ["Acertou", "Subestimou 10-25%", "Subestimou 25-50%", "Subestimou >50%"]},
+            "prazo_manteve": {"type": "boolean", "label": "Cumpriu o prazo?", "required": True},
+            "custo_manteve": {"type": "boolean", "label": "Manteve o custo?", "required": True},
+            "notas": {"type": "textarea", "label": "Observações (opcional)", "required": False},
+        }
+    }
+
+@router.post("/enviar/{token}", status_code=status.HTTP_201_CREATED)
+def enviar_feedback_via_link(
+    token: str,
+    feedback: FeedbackViaLink,
+    db: Session = Depends(get_db),
+):
+    """
+    Submete um feedback usando um link personalizado.
+    Público (sem autenticação).
+    Valida o token e marca como usado após submissão.
+    """
+    # Buscar o link
+    feedback_link = db.query(FeedbackLink).filter(FeedbackLink.token == token).first()
+
+    if not feedback_link:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Link de feedback inválido ou não encontrado",
+        )
+
+    # Validar se o link é válido
+    if not feedback_link.esta_valido():
+        if feedback_link.usado:
+            raise HTTPException(
+                status_code=status.HTTP_410_GONE,
+                detail="Este link já foi utilizado uma vez",
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_410_GONE,
+                detail="Este link expirou",
+            )
+
+    # Validar feedback
+    if feedback.qualidade < 1 or feedback.qualidade > 5:
+        raise HTTPException(
+            status_code=400,
+            detail="Qualidade deve ser entre 1 e 5",
+        )
+
+    valores_validos = [
+        "Acertou",
+        "Subestimou 10-25%",
+        "Subestimou 25-50%",
+        "Subestimou >50%",
+    ]
+    if feedback.material_estimativa not in valores_validos:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Material estimativa inválido",
+        )
+
+    # Validar condominio
+    condominio = db.query(Condominio).filter(Condominio.id == feedback.condominio_id).first()
+    if not condominio:
+        raise HTTPException(
+            status_code=400,
+            detail="Condomínio não existe",
+        )
+
+    # Criar feedback
+    novo_feedback = Feedback(
+        prestador_id=feedback_link.prestador_id,
+        condominio_id=feedback.condominio_id,
+        categoria_id=db.query(Prestador).filter(Prestador.id == feedback_link.prestador_id).first().categoria_id,
+        qualidade=feedback.qualidade,
+        material_estimativa=feedback.material_estimativa,
+        prazo_manteve=feedback.prazo_manteve,
+        custo_manteve=feedback.custo_manteve,
+        seu_feedback=feedback.seu_feedback,
+        notas=feedback.notas,
+    )
+    db.add(novo_feedback)
+
+    # Marcar link como usado
+    feedback_link.usado = True
+    feedback_link.usado_em = datetime.utcnow()
+    db.add(feedback_link)
+
+    db.commit()
+    db.refresh(novo_feedback)
+
+    return {
+        "success": True,
+        "message": "Feedback enviado com sucesso. Obrigado!",
+        "feedback_id": novo_feedback.id,
+    }
 
 @router.get("")
 def listar_feedbacks(
