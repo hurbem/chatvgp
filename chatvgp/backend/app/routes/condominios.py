@@ -21,23 +21,37 @@ class CondominioResponse(BaseModel):
     class Config:
         orm_mode = True
 
-@router.get("", response_model=List[CondominioResponse])
+@router.get("")
 def listar_condominios(cidade: str = None, db: Session = Depends(get_db)):
     """Listar condomínios (público)."""
     query = db.query(Condominio)
     if cidade:
         query = query.filter(Condominio.cidade == cidade)
-    return query.all()
+    condominios = query.all()
+    return [
+        {
+            "id": c.id,
+            "nome": c.nome,
+            "cidade": c.cidade,
+            "criado_em": c.criado_em.isoformat() if c.criado_em else None,
+        }
+        for c in condominios
+    ]
 
-@router.get("/{condominio_id}", response_model=CondominioResponse)
+@router.get("/{condominio_id}")
 def obter_condominio(condominio_id: int, db: Session = Depends(get_db)):
     """Obter detalhes de um condomínio."""
     condominio = db.query(Condominio).filter(Condominio.id == condominio_id).first()
     if not condominio:
         raise HTTPException(status_code=404, detail="Condomínio não encontrado")
-    return condominio
+    return {
+        "id": condominio.id,
+        "nome": condominio.nome,
+        "cidade": condominio.cidade,
+        "criado_em": condominio.criado_em.isoformat() if condominio.criado_em else None,
+    }
 
-@router.post("", response_model=CondominioResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 def criar_condominio(
     condominio: CondominioCreate,
     db: Session = Depends(get_db),

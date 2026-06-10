@@ -19,12 +19,20 @@ class CategoriaResponse(BaseModel):
     class Config:
         orm_mode = True
 
-@router.get("", response_model=List[CategoriaResponse])
+@router.get("")
 def listar_categorias(db: Session = Depends(get_db)):
     """Listar todas as categorias (público)."""
-    return db.query(Categoria).all()
+    categorias = db.query(Categoria).all()
+    return [
+        {
+            "id": c.id,
+            "nome": c.nome,
+            "descricao": c.descricao,
+        }
+        for c in categorias
+    ]
 
-@router.get("/{categoria_id}", response_model=CategoriaResponse)
+@router.get("/{categoria_id}")
 def obter_categoria(categoria_id: int, db: Session = Depends(get_db)):
     """Obter detalhes de uma categoria."""
     categoria = db.query(Categoria).filter(Categoria.id == categoria_id).first()
