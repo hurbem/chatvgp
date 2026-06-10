@@ -48,7 +48,7 @@ function App() {
         display: "flex",
         flexDirection: "column",
         gap: "8px",
-        zIndex: 1000
+        zIndex: 9999
       }}>
         {currentPage !== "chat" && (
           <button
