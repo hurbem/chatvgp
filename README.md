@@ -198,13 +198,12 @@ chatvgp/
 │   ├── requirements-render.txt
 │   ├── Dockerfile
 │   └── runtime.txt
-├── frontend-vite/
+├── chatvgp/frontend/
 │   ├── src/
-│   │   ├── components/       # React components
-│   │   ├── services/         # API client
-│   │   └── App.tsx
-│   ├── .env                  # Environment variables
-│   └── vite.config.ts
+│   │   ├── pages/             # ChatPage, IndicarProfissional, etc.
+│   │   └── App.jsx
+│   ├── .env.example           # Environment variables
+│   └── package.json
 └── README.md
 ```
 
@@ -224,7 +223,7 @@ CORS_ORIGINS=https://chatvgp.vercel.app,https://chatvgp.com
 ### Frontend (Vercel)
 
 ```
-VITE_API_BASE_URL=https://chatvgp-api.onrender.com/api
+REACT_APP_API_BASE_URL=https://chatvgp-api.onrender.com/api
 ```
 
 ## 📊 Modelos de Dados

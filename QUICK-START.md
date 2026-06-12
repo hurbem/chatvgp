@@ -64,13 +64,13 @@ INFO:     Application startup complete
 
 ### Terminal 3: Frontend
 ```bash
-cd frontend-vite
-npm run dev
+cd chatvgp/frontend
+npm start
 ```
 
 **Esperado:**
 ```
-➜ Local:   http://localhost:5173/
+Local:            http://localhost:3000
 ```
 
 ---

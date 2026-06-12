@@ -1,5 +1,9 @@
 # Resumo da Sessão - ChatVGP Setup Local
 
+> ⚠️ **Nota (12/06/2026):** o plano de frontend em Vite descrito abaixo foi
+> abandonado. O frontend ativo do projeto é `chatvgp/frontend` (Create React
+> App). Este documento é mantido apenas como registro histórico da sessão.
+
 **Data:** 2 de Junho de 2026  
 **Status:** ✅ Frontend Pronto | ⏳ Backend em Progresso
 

@@ -131,24 +131,19 @@ curl https://chatvgp-api.onrender.com/health
 - Ir para https://vercel.com/dashboard
 - Sign up com GitHub
 
-### 2. Atualizar Frontend .env
+### 2. Configurar variável de ambiente do Frontend
 
 ```bash
-cd ~/Documents/Claude/Projects/Projeto\ ChatVGP/frontend-vite
+cd ~/Documents/Claude/Projects/Projeto\ ChatVGP/chatvgp/frontend
 
-# Editar .env para produção
-cat > .env.production << 'EOF'
-VITE_API_BASE_URL=https://chatvgp-api.onrender.com/api
+# Criar .env local (não é commitado - veja .env.example)
+cat > .env << 'EOF'
+REACT_APP_API_BASE_URL=https://chatvgp-api.onrender.com/api
 EOF
-
-# Copiar para .env também
-cp .env.production .env
-
-# Commit
-git add .env
-git commit -m "Update API URL to production"
-git push
 ```
+
+No Vercel, configure a mesma variável (`REACT_APP_API_BASE_URL`) em
+**Project Settings → Environment Variables**.
 
 ### 3. Deploy no Vercel
 

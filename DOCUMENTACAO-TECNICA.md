@@ -303,18 +303,18 @@ python3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ### Passo 3: Frontend
 
 ```bash
-cd frontend-vite
+cd chatvgp/frontend
 
 # Dependências
 npm install
 
 # .env
 cat > .env << 'EOF'
-VITE_API_BASE_URL=http://localhost:8000/api
+REACT_APP_API_BASE_URL=http://localhost:8000/api
 EOF
 
 # Rodar
-npm run dev
+npm start
 ```
 
 ### Passo 4: Criar dados
