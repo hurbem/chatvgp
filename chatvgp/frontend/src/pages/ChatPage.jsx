@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FounderBadge } from '../components/FounderBadge';
+import logoChatVGP from '../assets/logo-chatvgp.svg';
 
 export const ChatPage = () => {
   const [pergunta, setPergunta] = useState('');
@@ -35,8 +36,13 @@ export const ChatPage = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f0f9ff', padding: '40px 20px' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <h1>💬 Buscar Prestadores</h1>
-        
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <img src={logoChatVGP} alt="ChatVGP" style={{ height: '60px', marginBottom: '8px' }} />
+          <p style={{ fontSize: '16px', color: '#374151', margin: 0 }}>
+            Encontre prestadores de serviços em Vargem Grande Paulista-SP
+          </p>
+        </div>
+
         <input
           type="text"
           placeholder="Ex: preciso de um eletricista"

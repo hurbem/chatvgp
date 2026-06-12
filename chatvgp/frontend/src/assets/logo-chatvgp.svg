@@ -1,0 +1,22 @@
+<svg width="220" height="60" viewBox="0 0 220 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ícone: balão de chat com pin de localização -->
+  <g>
+    <!-- Balão de chat -->
+    <path d="M4 6 H44 C47.3 6 50 8.7 50 12 V30 C50 33.3 47.3 36 44 36 H26 L16 46 V36 H4 C0.7 36 -2 33.3 -2 30 V12 C-2 8.7 0.7 6 4 6 Z"
+          fill="#3b82f6" transform="translate(4,2)"/>
+    <!-- Pin de localização dentro do balão -->
+    <g transform="translate(20, 12)">
+      <path d="M11 0 C5.5 0 1 4.3 1 9.6 C1 15.5 11 26 11 26 C11 26 21 15.5 21 9.6 C21 4.3 16.5 0 11 0 Z"
+            fill="#ffffff"/>
+      <circle cx="11" cy="9.6" r="4.2" fill="#16a34a"/>
+    </g>
+  </g>
+
+  <!-- Texto: ChatVGP -->
+  <text x="64" y="32" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#111827">
+    Chat<tspan fill="#16a34a">VGP</tspan>
+  </text>
+  <text x="64" y="48" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#6B7280" letter-spacing="0.5">
+    Vargem Grande Paulista
+  </text>
+</svg>
