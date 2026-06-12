@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FounderBadge } from '../components/FounderBadge';
 import logoChatVGP from '../assets/logo-chatvgp.svg';
+import { API_BASE_URL } from '../config';
 
 export const ChatPage = () => {
   const [pergunta, setPergunta] = useState('');
@@ -18,7 +19,7 @@ export const ChatPage = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/chat/buscar', {
+      const response = await fetch(`${API_BASE_URL}/api/chat/buscar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pergunta }),
@@ -123,7 +124,7 @@ export const ChatPage = () => {
                       target="_blank"
                       rel="noreferrer"
                       onClick={() => {
-                        fetch(`http://localhost:8000/api/prestadores/${p.id}/clique-whatsapp`, { method: 'POST' }).catch(() => {});
+                        fetch(`${API_BASE_URL}/api/prestadores/${p.id}/clique-whatsapp`, { method: 'POST' }).catch(() => {});
                       }}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '10px', padding: '8px 16px', backgroundColor: '#16a34a', color: 'white', textDecoration: 'none', borderRadius: '6px' }}
                     >

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 
 // Valida CPF (11 dígitos) ou CNPJ (14 dígitos), incluindo dígitos verificadores.
 function validarCpfCnpj(valor) {
@@ -55,7 +56,7 @@ export default function IndicarProfissional() {
   useEffect(() => {
     const carregarDados = async () => {
       try {
-        const catRes = await fetch('http://localhost:8000/api/categorias');
+        const catRes = await fetch(`${API_BASE_URL}/api/categorias`);
         if (catRes.ok) setCategorias(await catRes.json());
       } catch (error) {
         setMessage('Erro ao carregar dados');
@@ -131,7 +132,7 @@ export default function IndicarProfissional() {
         site: formData.site || null,
       };
 
-      const prestadorResponse = await fetch('http://localhost:8000/api/prestadores', {
+      const prestadorResponse = await fetch(`${API_BASE_URL}/api/prestadores`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(prestadorData),
