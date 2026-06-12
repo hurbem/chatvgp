@@ -68,7 +68,7 @@ export default function IndicarProfissional() {
   }, []);
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, checked } = e.target;
 
     if (name === 'categoria_ids') {
       const catId = parseInt(value);
