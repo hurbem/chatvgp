@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Log
 from app.utils.security import get_current_admin
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 
 router = APIRouter(prefix="/api/logs", tags=["logs"])
 
@@ -112,11 +112,13 @@ def estatisticas_logs(db: Session = Depends(get_db), admin: dict = Depends(get_c
         total_logs = db.query(Log).count()
         nao_identificadas = db.query(Log).filter(Log.tipo == "CATEGORIA_NAO_IDENTIFICADA").count()
         sucesso = db.query(Log).filter(Log.tipo == "BUSCA_SUCESSO").count()
+        cliques_whatsapp = db.query(Log).filter(Log.tipo == "CLIQUE_WHATSAPP").count()
 
         return {
             "total_logs": total_logs,
             "buscas_nao_identificadas": nao_identificadas,
             "buscas_com_sucesso": sucesso,
+            "cliques_whatsapp": cliques_whatsapp,
             "taxa_sucesso_pct": round((sucesso / total_logs * 100), 2) if total_logs > 0 else 0
         }
 
@@ -124,4 +126,41 @@ def estatisticas_logs(db: Session = Depends(get_db), admin: dict = Depends(get_c
         raise HTTPException(
             status_code=500,
             detail=f"Erro ao calcular estatísticas: {str(e)}"
+        )
+
+@router.get("/cliques-whatsapp")
+def cliques_whatsapp(db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)):
+    """
+    Retorna a contagem de cliques no botão de WhatsApp, agrupados por prestador.
+    Admin only (requer token).
+    """
+    try:
+        resultados = (
+            db.query(
+                Log.categoria_encontrada.label("prestador_id"),
+                Log.pergunta.label("nome"),
+                func.count(Log.id).label("cliques"),
+            )
+            .filter(Log.tipo == "CLIQUE_WHATSAPP")
+            .group_by(Log.categoria_encontrada, Log.pergunta)
+            .order_by(desc("cliques"))
+            .all()
+        )
+
+        return {
+            "total_cliques": sum(r.cliques for r in resultados),
+            "por_prestador": [
+                {
+                    "prestador_id": int(r.prestador_id) if r.prestador_id else None,
+                    "nome": r.nome,
+                    "cliques": r.cliques,
+                }
+                for r in resultados
+            ],
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao calcular cliques de WhatsApp: {str(e)}"
         )

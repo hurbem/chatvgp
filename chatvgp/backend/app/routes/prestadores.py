@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.models import Prestador, PrestadorCategoria, Categoria
+from app.models import Prestador, PrestadorCategoria, Categoria, Log
 from app.schemas.prestador import (
     PrestadorCreate,
     PrestadorUpdate,
@@ -246,3 +246,30 @@ def ativar_prestador(
         "status": prestador.status,
         "mensagem": f"✅ Prestador '{prestador.nome}' ativado com sucesso!",
     }
+
+@router.post("/{prestador_id}/clique-whatsapp", status_code=status.HTTP_204_NO_CONTENT)
+def registrar_clique_whatsapp(
+    prestador_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Registra (na tabela logs) um clique no botão de WhatsApp de um prestador.
+    Público (sem autenticação) - chamado pelo frontend ao abrir o link.
+    """
+    prestador = db.query(Prestador).filter(Prestador.id == prestador_id).first()
+
+    if not prestador:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prestador não encontrado",
+        )
+
+    novo_log = Log(
+        tipo="CLIQUE_WHATSAPP",
+        pergunta=prestador.nome,
+        categoria_encontrada=str(prestador.id),
+    )
+    db.add(novo_log)
+    db.commit()
+
+    return None
