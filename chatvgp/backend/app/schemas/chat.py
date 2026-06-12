@@ -12,6 +12,8 @@ class PrestadorResult(BaseModel):
     instagram: Optional[str] = None
     site: Optional[str] = None
     notas: Optional[str] = None
+    verificado_hurbem: bool = False
+    premium: bool = False
 
 class ChatResponse(BaseModel):
     pergunta: str

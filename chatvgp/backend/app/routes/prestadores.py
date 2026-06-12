@@ -39,6 +39,8 @@ def listar_prestadores(
             "status": p.status,
             "notas": p.notas,
             "criado_em": p.criado_em.isoformat() if p.criado_em else None,
+            "verificado_hurbem": p.verificado_hurbem,
+            "premium": p.premium,
             "categorias": [{"id": c.id, "nome": c.nome} for c in p.categorias],
         })
 

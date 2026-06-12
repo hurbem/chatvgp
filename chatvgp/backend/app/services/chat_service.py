@@ -116,6 +116,8 @@ def buscar_prestadores(
             "site": p.site,
             "notas": p.notas,
             "link_whatsapp": gerar_link_whatsapp(p.whatsapp),
+            "verificado_hurbem": p.verificado_hurbem,
+            "premium": p.premium,
         })
 
     return resultado[:limit]
