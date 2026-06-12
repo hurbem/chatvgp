@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 from app.config import settings
-from app.models import Prestador, Categoria, Feedback, Log
-from app.services.ranking_service import calcular_stats_prestador
+from app.models import Prestador, Categoria, Log
 import json
 import logging
 import re
@@ -108,74 +107,19 @@ def buscar_prestadores(
 
     prestadores = query.all()
 
-    # Calcular scores agregados
-    prestadores_com_score = []
+    resultado = []
     for p in prestadores:
-        # Se condominio_id foi especificado, calcula score para esse condomínio
-        if condominio_id:
-            stats = calcular_stats_prestador(db, p.id, condominio_id)
-        else:
-            # Senão, calcula agregado de todos os feedbacks
-            feedbacks = db.query(Feedback).filter(Feedback.prestador_id == p.id).all()
-            if feedbacks:
-                total = len(feedbacks)
-                qualidade_media = sum(f.qualidade for f in feedbacks) / total
-                material_acertou = sum(1 for f in feedbacks if f.material_estimativa == "Acertou") / total
-                prazo_cumprido = sum(1 for f in feedbacks if f.prazo_manteve) / total
-                custo_mantido = sum(1 for f in feedbacks if f.custo_manteve) / total
+        resultado.append({
+            "id": p.id,
+            "nome": p.nome,
+            "whatsapp": p.whatsapp,
+            "instagram": p.instagram,
+            "site": p.site,
+            "notas": p.notas,
+            "link_whatsapp": gerar_link_whatsapp(p.whatsapp),
+        })
 
-                score_final = (material_acertou * 2) + (prazo_cumprido * 1.5) + (custo_mantido * 1.5) + qualidade_media
-
-                class Stats:
-                    pass
-                stats = Stats()
-                stats.score_final = round(score_final, 2)
-                stats.total_feedbacks = total
-                stats.qualidade_media = round(qualidade_media, 1)
-                stats.material_acertou_pct = round(material_acertou, 2)
-                stats.prazo_cumprido_pct = round(prazo_cumprido, 2)
-                stats.custo_mantido_pct = round(custo_mantido, 2)
-            else:
-                stats = None
-
-        # Sempre adiciona o prestador, com ou sem feedback
-        if stats:
-            prestadores_com_score.append({
-                "id": p.id,
-                "nome": p.nome,
-                "whatsapp": p.whatsapp,
-                "instagram": p.instagram,
-                "site": p.site,
-                "notas": p.notas,
-                "link_whatsapp": gerar_link_whatsapp(p.whatsapp),
-                "score_final": stats.score_final,
-                "feedback_count": stats.total_feedbacks,
-                "qualidade_media": stats.qualidade_media,
-                "material_acertou_pct": stats.material_acertou_pct,
-                "prazo_cumprido_pct": stats.prazo_cumprido_pct,
-                "custo_mantido_pct": stats.custo_mantido_pct,
-            })
-        else:
-            # Prestadores sem feedback retornam com score 0
-            prestadores_com_score.append({
-                "id": p.id,
-                "nome": p.nome,
-                "whatsapp": p.whatsapp,
-                "instagram": p.instagram,
-                "site": p.site,
-                "notas": p.notas,
-                "link_whatsapp": gerar_link_whatsapp(p.whatsapp),
-                "score_final": 0,
-                "feedback_count": 0,
-                "qualidade_media": None,
-                "material_acertou_pct": None,
-                "prazo_cumprido_pct": None,
-                "custo_mantido_pct": None,
-            })
-
-    # Ordenar por score e limitar
-    prestadores_com_score.sort(key=lambda x: x["score_final"], reverse=True)
-    return prestadores_com_score[:limit]
+    return resultado[:limit]
 
 def gerar_link_whatsapp(whatsapp: str) -> str:
     """

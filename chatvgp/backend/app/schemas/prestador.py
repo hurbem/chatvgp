@@ -47,11 +47,3 @@ class PrestadorResponse(BaseModel):
     verificado_hurbem: bool = False
     premium: bool = False
     categorias: List[CategoriaBase] = []
-
-class PrestadorComScore(PrestadorResponse):
-    score_final: float = 0
-    feedback_count: int = 0
-    qualidade_media: Optional[float] = None
-    material_acertou_pct: Optional[float] = None
-    prazo_cumprido_pct: Optional[float] = None
-    custo_mantido_pct: Optional[float] = None

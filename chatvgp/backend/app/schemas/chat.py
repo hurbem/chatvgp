@@ -10,12 +10,9 @@ class PrestadorResult(BaseModel):
     nome: str
     whatsapp: str
     link_whatsapp: str
-    score_final: float
-    feedback_count: int
-    qualidade_media: Optional[float]
-    material_acertou_pct: Optional[float]
-    prazo_cumprido_pct: Optional[float]
-    custo_mantido_pct: Optional[float]
+    instagram: Optional[str] = None
+    site: Optional[str] = None
+    notas: Optional[str] = None
 
 class ChatResponse(BaseModel):
     pergunta: str
