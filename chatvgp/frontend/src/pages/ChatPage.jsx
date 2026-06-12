@@ -107,8 +107,8 @@ export const ChatPage = () => {
                         </a>
                       )}
                     </div>
-                    <a href={p.link_whatsapp} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: '10px', padding: '8px 16px', backgroundColor: '#16a34a', color: 'white', textDecoration: 'none', borderRadius: '6px' }}>
-                      💬 Contatar
+                    <a href={p.link_whatsapp} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '10px', padding: '8px 16px', backgroundColor: '#16a34a', color: 'white', textDecoration: 'none', borderRadius: '6px' }}>
+                      💬 WhatsApp
                     </a>
                   </div>
                 ))}
