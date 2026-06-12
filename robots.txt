@@ -1,0 +1,53 @@
+User-agent: *
+Disallow: /
+
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /
+
+User-agent: Slurp
+Disallow: /
+
+User-agent: DuckDuckBot
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: YandexBot
+Disallow: /
+
+User-agent: Sogou
+Disallow: /
+
+User-agent: GPTbot
+Disallow: /
+
+User-agent: ChatGPT
+Disallow: /
+
+User-agent: Claude
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: curl
+Disallow: /
+
+User-agent: wget
+Disallow: /
+
+User-agent: python-requests
+Disallow: /
+
+User-agent: scrapy
+Disallow: /
+
+User-agent: mechanize
+Disallow: /

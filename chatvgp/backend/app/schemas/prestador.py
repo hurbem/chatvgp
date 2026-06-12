@@ -1,20 +1,20 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Optional, List
 from datetime import datetime
 
 class CategoriaBase(BaseModel):
-    nome: str
-    descricao: Optional[str] = None
-
-class Categoria(CategoriaBase):
     id: int
+    nome: str
 
 class PrestadorBase(BaseModel):
     nome: str
+    email: Optional[str] = None
     whatsapp: str
+    cpf_cnpj: Optional[str] = None
+    categoria_ids: List[int]  # Nova: lista de até 3 categorias
+    descricao: Optional[str] = None
     instagram: Optional[str] = None
     site: Optional[str] = None
-    categoria_id: int
     status: str = "ativo"
     notas: Optional[str] = None
 
@@ -24,16 +24,29 @@ class PrestadorCreate(PrestadorBase):
 class PrestadorUpdate(BaseModel):
     nome: Optional[str] = None
     whatsapp: Optional[str] = None
+    cpf_cnpj: Optional[str] = None
+    descricao: Optional[str] = None
     instagram: Optional[str] = None
     site: Optional[str] = None
-    categoria_id: Optional[int] = None
     status: Optional[str] = None
     notas: Optional[str] = None
 
-class PrestadorResponse(PrestadorBase):
+class PrestadorResponse(BaseModel):
     id: int
+    nome: str
+    email: Optional[str] = None
+    whatsapp: str
+    cpf_cnpj: Optional[str] = None
+    descricao: Optional[str] = None
+    instagram: Optional[str] = None
+    site: Optional[str] = None
+    status: str
+    notas: Optional[str] = None
     criado_em: datetime
-    categoria: Categoria
+    atualizado_em: datetime
+    verificado_hurbem: bool = False
+    premium: bool = False
+    categorias: List[CategoriaBase] = []
 
 class PrestadorComScore(PrestadorResponse):
     score_final: float = 0

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings, CORS_ORIGINS_LIST
 from app.database import Base, engine
+from app.middleware import SecurityMiddleware
 import logging
 import sys
 import os
@@ -23,7 +24,7 @@ logging.basicConfig(
 
 # Importar models para registrar no Base
 try:
-    from app.models import Categoria, Condominio, Prestador, Feedback, Usuario, Log, FeedbackLink
+    from app.models import Categoria, Condominio, Prestador, Feedback, Usuario, Log, FeedbackLink, Indicacao, PrestadorCategoria
     print("✅ Models importados")
 except Exception as e:
     print(f"⚠️ Aviso ao importar models: {e}")
@@ -36,7 +37,7 @@ except Exception as e:
     print(f"⚠️ Aviso ao criar tabelas: {e}")
 
 try:
-    from app.routes import chat, prestadores, categorias, condominios, feedback, auth, logs
+    from app.routes import chat, prestadores, categorias, condominios, feedback, auth, logs, indicacoes, aliases
     routes_available = True
 except Exception as e:
     print(f"Warning: Could not load routes: {e}")
@@ -47,6 +48,9 @@ app = FastAPI(
     description="API para ChatVGP - Busca de prestadores por IA",
     version="0.1.0",
 )
+
+# Security Middleware (deve ser PRIMEIRO)
+app.add_middleware(SecurityMiddleware)
 
 # CORS
 app.add_middleware(
@@ -78,8 +82,10 @@ if routes_available:
     app.include_router(prestadores.router)
     app.include_router(categorias.router)
     app.include_router(condominios.router)
+    app.include_router(indicacoes.router)
     app.include_router(feedback.router)
     app.include_router(logs.router)
+    app.include_router(aliases.router)
 
 @app.get("/health")
 def health():

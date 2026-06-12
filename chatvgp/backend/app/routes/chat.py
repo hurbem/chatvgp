@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.chat import ChatRequest, ChatResponse, PrestadorResult
-from app.services.chat_service import extrair_categoria_e_condominio, buscar_prestadores
-from app.models import Categoria, Condominio
+from app.services.chat_service import extrair_categoria, buscar_prestadores
+from app.models import Categoria
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -15,8 +15,8 @@ def buscar(request: ChatRequest, db: Session = Depends(get_db)):
     if not request.pergunta:
         raise HTTPException(status_code=400, detail="Pergunta não pode estar vazia")
 
-    # Extrair categoria e condomínio da pergunta
-    categoria_id, condominio_id = extrair_categoria_e_condominio(request.pergunta, db)
+    # Extrair categoria da pergunta
+    categoria_id = extrair_categoria(request.pergunta, db)
 
     if not categoria_id:
         return {
@@ -29,18 +29,15 @@ def buscar(request: ChatRequest, db: Session = Depends(get_db)):
         }
 
     # Buscar prestadores
-    prestadores = buscar_prestadores(db, categoria_id, condominio_id, limit=5)
+    prestadores = buscar_prestadores(db, categoria_id, limit=5)
 
-    # Obter nomes de categoria e condomínio
+    # Obter nome da categoria
     categoria = db.query(Categoria).filter(Categoria.id == categoria_id).first()
-    condominio = None
-    if condominio_id:
-        condominio = db.query(Condominio).filter(Condominio.id == condominio_id).first()
 
     response = {
         "pergunta": request.pergunta,
         "categoria": categoria.nome if categoria else None,
-        "condominio": condominio.nome if condominio else None,
+        "condominio": None,
         "prestadores": prestadores,
         "total_resultados": len(prestadores),
     }

@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 from app.config import settings
-from app.models import Prestador, Categoria, Condominio, Feedback, Log
+from app.models import Prestador, Categoria, Feedback, Log
 from app.services.ranking_service import calcular_stats_prestador
 import json
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -25,36 +26,54 @@ def registrar_log(db: Session, tipo: str, pergunta: str = None, categoria: str =
         logger.error(f"Erro ao registrar log: {e}")
         # Continua mesmo se falhar a gravação de log
 
-def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
+
+# Palavras muito curtas/comuns que não ajudam a identificar categoria ou condomínio
+STOPWORDS = {
+    "a", "o", "as", "os", "e", "ou", "de", "da", "do", "das", "dos",
+    "em", "no", "na", "nos", "nas", "um", "uma", "uns", "umas",
+    "para", "por", "com", "sem", "que", "se",
+}
+
+
+def _tokenize(texto: str) -> set:
+    """Extrai palavras (>=3 letras, sem stopwords) de um texto."""
+    palavras = re.findall(r"\w+", texto.lower())
+    return {p for p in palavras if len(p) >= 3 and p not in STOPWORDS}
+
+
+def extrair_categoria(pergunta: str, db: Session) -> int:
     """
-    Extrai categoria e condomínio da pergunta usando keyword matching.
-    Retorna (categoria_id, condominio_id).
+    Extrai a categoria da pergunta usando keyword matching
+    por palavras inteiras (nome + aliases).
+    Retorna categoria_id (ou None).
     Registra logs de pesquisas não identificadas no banco.
     """
     categorias = db.query(Categoria).all()
-    condominios = db.query(Condominio).all()
 
-    pergunta_lower = pergunta.lower()
+    pergunta_tokens = _tokenize(pergunta)
 
-    # Keyword matching para categorias
+    # Keyword matching para categorias (nome + aliases)
     categoria_id = None
     categoria_nome = None
     for cat in categorias:
-        keywords = cat.nome.lower().split()
-        if any(kw in pergunta_lower for kw in keywords):
+        # Procura no nome da categoria (palavras inteiras)
+        keywords = _tokenize(cat.nome)
+        if keywords & pergunta_tokens:
             categoria_id = cat.id
             categoria_nome = cat.nome
             break
 
-    # Keyword matching para condomínios
-    condominio_id = None
-    condominio_nome = None
-    for cond in condominios:
-        keywords = cond.nome.lower().split() + cond.cidade.lower().split()
-        if any(kw in pergunta_lower for kw in keywords):
-            condominio_id = cond.id
-            condominio_nome = cond.nome
-            break
+        # Procura nos aliases se tiver (cada alias pode ter mais de uma palavra)
+        if cat.aliases:
+            aliases = [alias.strip() for alias in cat.aliases.lower().split(',') if alias.strip()]
+            for alias in aliases:
+                alias_tokens = _tokenize(alias)
+                if alias_tokens and alias_tokens.issubset(pergunta_tokens):
+                    categoria_id = cat.id
+                    categoria_nome = cat.nome
+                    break
+            if categoria_id:
+                break
 
     # Se não encontrou categoria, registra log e retorna None
     if not categoria_id:
@@ -72,10 +91,9 @@ def extrair_categoria_e_condominio(pergunta: str, db: Session) -> tuple:
             tipo="BUSCA_SUCESSO",
             pergunta=pergunta,
             categoria=categoria_nome,
-            condominio=condominio_nome
         )
 
-    return categoria_id, condominio_id
+    return categoria_id
 
 def buscar_prestadores(
     db: Session, categoria_id: int, condominio_id: int = None, limit: int = 5
@@ -84,7 +102,7 @@ def buscar_prestadores(
     Busca prestadores por categoria, ordenados por score agregado.
     """
     query = db.query(Prestador).filter(
-        Prestador.categoria_id == categoria_id,
+        Prestador.categorias.any(Categoria.id == categoria_id),
         Prestador.status == "ativo",
     )
 
@@ -120,6 +138,7 @@ def buscar_prestadores(
             else:
                 stats = None
 
+        # Sempre adiciona o prestador, com ou sem feedback
         if stats:
             prestadores_com_score.append({
                 "id": p.id,
@@ -127,6 +146,7 @@ def buscar_prestadores(
                 "whatsapp": p.whatsapp,
                 "instagram": p.instagram,
                 "site": p.site,
+                "notas": p.notas,
                 "link_whatsapp": gerar_link_whatsapp(p.whatsapp),
                 "score_final": stats.score_final,
                 "feedback_count": stats.total_feedbacks,
@@ -136,13 +156,14 @@ def buscar_prestadores(
                 "custo_mantido_pct": stats.custo_mantido_pct,
             })
         else:
-            # Prestadores sem feedback ainda retornam com score 0
+            # Prestadores sem feedback retornam com score 0
             prestadores_com_score.append({
                 "id": p.id,
                 "nome": p.nome,
                 "whatsapp": p.whatsapp,
                 "instagram": p.instagram,
                 "site": p.site,
+                "notas": p.notas,
                 "link_whatsapp": gerar_link_whatsapp(p.whatsapp),
                 "score_final": 0,
                 "feedback_count": 0,

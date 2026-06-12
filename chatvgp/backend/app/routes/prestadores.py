@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.models import Prestador, Categoria
+from app.models import Prestador, PrestadorCategoria, Categoria
 from app.schemas.prestador import (
     PrestadorCreate,
     PrestadorUpdate,
@@ -29,8 +29,6 @@ def verificar_admin(authorization: str = None) -> bool:
 
 @router.get("")
 def listar_prestadores(
-    categoria_id: int = None,
-    condominio_id: int = None,
     status_filter: str = "ativo",
     db: Session = Depends(get_db),
 ):
@@ -39,9 +37,6 @@ def listar_prestadores(
     Público (sem autenticação).
     """
     query = db.query(Prestador)
-
-    if categoria_id:
-        query = query.filter(Prestador.categoria_id == categoria_id)
 
     if status_filter:
         query = query.filter(Prestador.status == status_filter)
@@ -88,11 +83,10 @@ def listar_prestadores(
             "whatsapp": p.whatsapp,
             "instagram": p.instagram,
             "site": p.site,
-            "categoria_id": p.categoria_id,
             "status": p.status,
             "notas": p.notas,
             "criado_em": p.criado_em.isoformat() if p.criado_em else None,
-            "categoria": {"id": p.categoria.id, "nome": p.categoria.nome} if p.categoria else None,
+            "categorias": [{"id": c.id, "nome": c.nome} for c in p.categorias],
             "score_final": stats.score_final if stats else 0,
             "feedback_count": stats.total_feedbacks if stats else 0,
             "qualidade_media": stats.qualidade_media if stats else None,
@@ -145,12 +139,19 @@ def obter_prestador(prestador_id: int, db: Session = Depends(get_db)):
     return {
         "id": prestador.id,
         "nome": prestador.nome,
+        "email": prestador.email,
         "whatsapp": prestador.whatsapp,
-        "categoria_id": prestador.categoria_id,
+        "cpf_cnpj": prestador.cpf_cnpj,
+        "descricao": prestador.descricao,
+        "instagram": prestador.instagram,
+        "site": prestador.site,
         "status": prestador.status,
         "notas": prestador.notas,
         "criado_em": prestador.criado_em.isoformat() if prestador.criado_em else None,
-        "categoria": {"id": prestador.categoria.id, "nome": prestador.categoria.nome} if prestador.categoria else None,
+        "atualizado_em": prestador.atualizado_em.isoformat() if prestador.atualizado_em else None,
+        "verificado_hurbem": prestador.verificado_hurbem,
+        "premium": prestador.premium,
+        "categorias": [{"id": c.id, "nome": c.nome} for c in prestador.categorias],
         "score_final": stats.score_final if stats else 0,
         "feedback_count": stats.total_feedbacks if stats else 0,
         "qualidade_media": stats.qualidade_media if stats else None,
@@ -163,59 +164,62 @@ def obter_prestador(prestador_id: int, db: Session = Depends(get_db)):
 def criar_prestador(
     prestador: PrestadorCreate,
     db: Session = Depends(get_db),
-    authorization: str = Header(None),
 ):
     """
-    Criar novo prestador.
-    Admin only (requer header Authorization: Bearer <token>).
+    Criar novo prestador com até 3 categorias.
+    Público (sem autenticação para MVP/testes).
     """
-    if not authorization:
+    # Validar categoria_ids
+    categoria_ids = prestador.categoria_ids
+    if not categoria_ids or len(categoria_ids) == 0:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de autenticação necessário",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Selecione pelo menos 1 categoria",
         )
 
-    # Extrair token do header "Authorization: Bearer <token>"
-    try:
-        scheme, token = authorization.split()
-        if scheme.lower() != "bearer":
+    if len(categoria_ids) > 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Máximo 3 categorias por prestador",
+        )
+
+    # Validar se categorias existem
+    for cat_id in categoria_ids:
+        cat = db.query(Categoria).filter(Categoria.id == cat_id).first()
+        if not cat:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Scheme inválido. Use: Authorization: Bearer <token>",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Categoria {cat_id} não existe",
             )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Formato de Authorization inválido",
-        )
 
-    # Verificar token
-    from app.utils.security import verify_token
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido ou expirado",
-        )
+    # Validar se já existe com mesmo email ou whatsapp
+    if prestador.email:
+        existing_email = db.query(Prestador).filter(Prestador.email == prestador.email).first()
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email já cadastrado",
+            )
 
-    # Validar categoria existe
-    categoria = db.query(Categoria).filter(Categoria.id == prestador.categoria_id).first()
-    if not categoria:
+    existing_whatsapp = db.query(Prestador).filter(Prestador.whatsapp == prestador.whatsapp).first()
+    if existing_whatsapp:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Categoria não existe",
+            detail="WhatsApp já cadastrado",
         )
 
-    # Validar se já existe com mesmo nome
-    existing = db.query(Prestador).filter(Prestador.nome == prestador.nome).first()
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Prestador com este nome já existe",
-        )
-
-    novo_prestador = Prestador(**prestador.dict())
+    # Criar prestador com status 'ativo' por padrão
+    prestador_data = prestador.dict(exclude={"categoria_ids"})
+    prestador_data['status'] = 'ativo'
+    novo_prestador = Prestador(**prestador_data)
     db.add(novo_prestador)
+    db.flush()  # Flush para obter o ID
+
+    # Adicionar categorias
+    for cat_id in categoria_ids:
+        pc = PrestadorCategoria(prestador_id=novo_prestador.id, categoria_id=cat_id)
+        db.add(pc)
+
     db.commit()
     db.refresh(novo_prestador)
 
@@ -223,11 +227,10 @@ def criar_prestador(
         "id": novo_prestador.id,
         "nome": novo_prestador.nome,
         "whatsapp": novo_prestador.whatsapp,
-        "instagram": novo_prestador.instagram,
-        "site": novo_prestador.site,
-        "categoria_id": novo_prestador.categoria_id,
+        "email": novo_prestador.email,
+        "cpf_cnpj": novo_prestador.cpf_cnpj,
         "status": novo_prestador.status,
-        "notas": novo_prestador.notas,
+        "categorias": [{"id": c.id, "nome": c.nome} for c in novo_prestador.categorias],
         "criado_em": novo_prestador.criado_em.isoformat() if novo_prestador.criado_em else None,
     }
 
@@ -277,15 +280,6 @@ def atualizar_prestador(
             detail="Prestador não encontrado",
         )
 
-    # Validar categoria se estiver sendo alterada
-    if prestador_update.categoria_id:
-        categoria = db.query(Categoria).filter(Categoria.id == prestador_update.categoria_id).first()
-        if not categoria:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Categoria não existe",
-            )
-
     # Atualizar apenas campos não-None
     dados_atualizacao = prestador_update.dict(exclude_unset=True)
     for campo, valor in dados_atualizacao.items():
@@ -299,9 +293,6 @@ def atualizar_prestador(
         "id": prestador.id,
         "nome": prestador.nome,
         "whatsapp": prestador.whatsapp,
-        "instagram": prestador.instagram,
-        "site": prestador.site,
-        "categoria_id": prestador.categoria_id,
         "status": prestador.status,
         "notas": prestador.notas,
         "criado_em": prestador.criado_em.isoformat() if prestador.criado_em else None,
@@ -356,3 +347,37 @@ def deletar_prestador(
     db.commit()
 
     return None
+
+@router.patch("/{prestador_id}/ativar", status_code=status.HTTP_200_OK)
+def ativar_prestador(
+    prestador_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Ativar um prestador (mudar status de 'inativo' para 'ativo').
+    Público - sem autenticação para facilitar aprovação.
+    """
+    prestador = db.query(Prestador).filter(Prestador.id == prestador_id).first()
+
+    if not prestador:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Prestador não encontrado",
+        )
+
+    if prestador.status == "ativo":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Prestador já está ativo",
+        )
+
+    prestador.status = "ativo"
+    db.commit()
+    db.refresh(prestador)
+
+    return {
+        "id": prestador.id,
+        "nome": prestador.nome,
+        "status": prestador.status,
+        "mensagem": f"✅ Prestador '{prestador.nome}' ativado com sucesso!",
+    }

@@ -1,6 +1,10 @@
 from pydantic import BaseSettings
 from typing import List
 import os
+from dotenv import load_dotenv
+
+# Carrega variáveis do arquivo .env (se existir) para o ambiente do processo
+load_dotenv()
 
 class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost/chatvgp")
@@ -15,7 +19,7 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 # Parse CORS_ORIGINS from env (comma-separated string)
-cors_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000,http://localhost:5173")
+cors_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000,http://localhost:5173,http://127.0.0.1:3000")
 CORS_ORIGINS_LIST = [url.strip() for url in cors_env.split(",") if url.strip()]
 
 try:
