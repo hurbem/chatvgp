@@ -5,7 +5,7 @@ Script para inserir dados de teste: 5 prestadores na categoria 1 (Encanador)
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.models import Prestador, Categoria, Condominio, Base
+from app.models import Prestador, Categoria, Base
 
 # Configurar banco de dados
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost/chatvgp")
@@ -23,19 +23,12 @@ def seed_prestadores():
             print("❌ Categoria 1 não encontrada!")
             return
 
-        # Verificar se condominio 2 existe
-        condominio = session.query(Condominio).filter(Condominio.id == 2).first()
-        if not condominio:
-            print("❌ Condomínio 2 não encontrado!")
-            return
-
         # Dados dos 5 prestadores
         prestadores_data = [
             {
                 "nome": "Carlos Silva - Encanador",
                 "whatsapp": "11987654321",
                 "categoria_id": 1,
-                "condominio_ids": [2],
                 "status": "ativo",
                 "notas": "Especialista em hidráulica residencial"
             },
@@ -43,7 +36,6 @@ def seed_prestadores():
                 "nome": "Roberto Santos",
                 "whatsapp": "11987654322",
                 "categoria_id": 1,
-                "condominio_ids": [2],
                 "status": "ativo",
                 "notas": "Atua há 15 anos na região"
             },
@@ -51,7 +43,6 @@ def seed_prestadores():
                 "nome": "Felipe Oliveira",
                 "whatsapp": "11987654323",
                 "categoria_id": 1,
-                "condominio_ids": [2],
                 "status": "ativo",
                 "notas": "Reparos urgentes 24h"
             },
@@ -59,7 +50,6 @@ def seed_prestadores():
                 "nome": "Marcelo Costa",
                 "whatsapp": "11987654324",
                 "categoria_id": 1,
-                "condominio_ids": [2],
                 "status": "ativo",
                 "notas": "Orçamentos sem custo"
             },
@@ -67,7 +57,6 @@ def seed_prestadores():
                 "nome": "André Pereira",
                 "whatsapp": "11987654325",
                 "categoria_id": 1,
-                "condominio_ids": [2],
                 "status": "ativo",
                 "notas": "Trabalho com garantia"
             }

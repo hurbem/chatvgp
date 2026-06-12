@@ -12,7 +12,6 @@ class Log(Base):
     tipo = Column(String(100), index=True)  # "CATEGORIA_NAO_IDENTIFICADA", "BUSCA_SUCESSO", etc
     pergunta = Column(Text, nullable=True)  # A pergunta do usuário
     categoria_encontrada = Column(String(255), nullable=True)  # Categoria encontrada (se houver)
-    condominio_encontrado = Column(String(255), nullable=True)  # Condominio encontrado (se houver)
     mensagem = Column(Text, nullable=True)  # Mensagem adicional
     criado_em = Column(DateTime, default=datetime.utcnow, index=True)
 

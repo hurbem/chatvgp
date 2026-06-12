@@ -7,7 +7,7 @@ import re
 
 logger = logging.getLogger(__name__)
 
-def registrar_log(db: Session, tipo: str, pergunta: str = None, categoria: str = None, condominio: str = None, mensagem: str = None):
+def registrar_log(db: Session, tipo: str, pergunta: str = None, categoria: str = None, mensagem: str = None):
     """
     Registra um log de busca no banco de dados.
     """
@@ -16,7 +16,6 @@ def registrar_log(db: Session, tipo: str, pergunta: str = None, categoria: str =
             tipo=tipo,
             pergunta=pergunta,
             categoria_encontrada=categoria,
-            condominio_encontrado=condominio,
             mensagem=mensagem
         )
         db.add(novo_log)
@@ -95,7 +94,7 @@ def extrair_categoria(pergunta: str, db: Session) -> int:
     return categoria_id
 
 def buscar_prestadores(
-    db: Session, categoria_id: int, condominio_id: int = None, limit: int = 5
+    db: Session, categoria_id: int, limit: int = 5
 ) -> list:
     """
     Busca prestadores por categoria, ordenados por score agregado.

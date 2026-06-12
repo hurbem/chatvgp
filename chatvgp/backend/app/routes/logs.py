@@ -58,7 +58,6 @@ def buscas_com_sucesso(limit: int = 100, db: Session = Depends(get_db)):
                     "timestamp": log.criado_em.isoformat() if log.criado_em else None,
                     "pergunta": log.pergunta,
                     "categoria": log.categoria_encontrada,
-                    "condominio": log.condominio_encontrado,
                     "tipo": log.tipo
                 }
                 for log in logs
@@ -90,7 +89,6 @@ def todos_os_logs(limit: int = 100, db: Session = Depends(get_db)):
                     "tipo": log.tipo,
                     "pergunta": log.pergunta,
                     "categoria": log.categoria_encontrada,
-                    "condominio": log.condominio_encontrado,
                     "mensagem": log.mensagem
                 }
                 for log in logs

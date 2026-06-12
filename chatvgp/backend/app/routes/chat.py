@@ -23,7 +23,6 @@ def buscar(request: ChatRequest, db: Session = Depends(get_db)):
             "pergunta": request.pergunta,
             "mensagem": "Nenhum prestador encontrado para essa busca.",
             "categoria": None,
-            "condominio": None,
             "prestadores": [],
             "total_resultados": 0,
         }
@@ -37,7 +36,6 @@ def buscar(request: ChatRequest, db: Session = Depends(get_db)):
     response = {
         "pergunta": request.pergunta,
         "categoria": categoria.nome if categoria else None,
-        "condominio": None,
         "prestadores": prestadores,
         "total_resultados": len(prestadores),
     }
