@@ -2,15 +2,16 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Log
+from app.utils.security import get_current_admin
 from sqlalchemy import desc
 
 router = APIRouter(prefix="/api/logs", tags=["logs"])
 
 @router.get("/buscas-nao-identificadas")
-def buscas_nao_identificadas(limit: int = 100, db: Session = Depends(get_db)):
+def buscas_nao_identificadas(limit: int = 100, db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)):
     """
     Retorna as últimas pesquisas que não tiveram categoria identificada.
-    Público (sem autenticação).
+    Admin only (requer token).
     """
     try:
         logs = db.query(Log).filter(
@@ -39,10 +40,10 @@ def buscas_nao_identificadas(limit: int = 100, db: Session = Depends(get_db)):
         )
 
 @router.get("/buscas-sucesso")
-def buscas_com_sucesso(limit: int = 100, db: Session = Depends(get_db)):
+def buscas_com_sucesso(limit: int = 100, db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)):
     """
     Retorna as últimas pesquisas que tiveram categoria identificada com sucesso.
-    Público (sem autenticação).
+    Admin only (requer token).
     """
     try:
         logs = db.query(Log).filter(
@@ -71,10 +72,10 @@ def buscas_com_sucesso(limit: int = 100, db: Session = Depends(get_db)):
         )
 
 @router.get("/todas")
-def todos_os_logs(limit: int = 100, db: Session = Depends(get_db)):
+def todos_os_logs(limit: int = 100, db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)):
     """
     Retorna todos os logs da aplicação.
-    Público (sem autenticação).
+    Admin only (requer token).
     """
     try:
         logs = db.query(Log).order_by(desc(Log.criado_em)).limit(limit).all()
@@ -102,9 +103,10 @@ def todos_os_logs(limit: int = 100, db: Session = Depends(get_db)):
         )
 
 @router.get("/estatisticas")
-def estatisticas_logs(db: Session = Depends(get_db)):
+def estatisticas_logs(db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)):
     """
     Retorna estatísticas gerais dos logs.
+    Admin only (requer token).
     """
     try:
         total_logs = db.query(Log).count()

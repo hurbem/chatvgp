@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.services.categoria_service import gerar_aliases_com_claude
+from app.utils.security import get_current_admin
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ class AliasResponse(BaseModel):
     aliases: str
 
 @router.post("/gerar")
-def gerar_aliases(request: AliasRequest) -> AliasResponse:
+def gerar_aliases(request: AliasRequest, admin: dict = Depends(get_current_admin)) -> AliasResponse:
     """
     Endpoint simples para testar geração de aliases via Claude API.
 

@@ -2,6 +2,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
+from fastapi import Header, HTTPException, status
 from app.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -29,3 +30,34 @@ def verify_token(token: str) -> Optional[dict]:
         return payload
     except JWTError:
         return None
+
+
+def get_current_admin(authorization: str = Header(None)) -> dict:
+    """
+    Dependency reutilizável: exige header `Authorization: Bearer <token>`
+    com um JWT válido (emitido por /api/auth/login). Lança 401 caso contrário.
+    """
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token de autenticação necessário",
+        )
+
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise ValueError
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Formato de Authorization inválido. Use: Bearer <token>",
+        )
+
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
+        )
+
+    return payload

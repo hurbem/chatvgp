@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.models import Categoria
 from app.services.categoria_service import gerar_aliases_com_claude
+from app.utils.security import get_current_admin
 
 router = APIRouter(prefix="/api/categorias", tags=["categorias"])
 
@@ -46,8 +47,9 @@ def obter_categoria(categoria_id: int, db: Session = Depends(get_db)):
 def criar_categoria(
     categoria: CategoriaCreate,
     db: Session = Depends(get_db),
+    admin: dict = Depends(get_current_admin),
 ):
-    """Criar nova categoria com aliases gerados automaticamente pelo Claude."""
+    """Criar nova categoria com aliases gerados automaticamente pelo Claude. Admin only."""
 
     existing = db.query(Categoria).filter(Categoria.nome == categoria.nome).first()
     if existing:
@@ -80,12 +82,9 @@ def atualizar_categoria(
     categoria_id: int,
     categoria_update: CategoriaCreate,
     db: Session = Depends(get_db),
-    authorization: str = None,
+    admin: dict = Depends(get_current_admin),
 ):
     """Atualizar categoria (admin only)."""
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Autenticação necessária")
-
     categoria = db.query(Categoria).filter(Categoria.id == categoria_id).first()
     if not categoria:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
@@ -100,12 +99,9 @@ def atualizar_categoria(
 def deletar_categoria(
     categoria_id: int,
     db: Session = Depends(get_db),
-    authorization: str = None,
+    admin: dict = Depends(get_current_admin),
 ):
     """Deletar categoria (admin only)."""
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Autenticação necessária")
-
     categoria = db.query(Categoria).filter(Categoria.id == categoria_id).first()
     if not categoria:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")

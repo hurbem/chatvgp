@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -8,22 +8,9 @@ from app.schemas.prestador import (
     PrestadorUpdate,
     PrestadorResponse,
 )
-from app.utils.security import verify_token
+from app.utils.security import get_current_admin
 
 router = APIRouter(prefix="/api/prestadores", tags=["prestadores"])
-
-def verificar_admin(authorization: str = None) -> bool:
-    """
-    Middleware simples: valida se tem token válido.
-    Para MVP, aceita qualquer token não-vazio.
-    Em produção: usar JWT properly.
-    """
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de autenticação necessário",
-        )
-    return True
 
 @router.get("")
 def listar_prestadores(
@@ -168,39 +155,12 @@ def atualizar_prestador(
     prestador_id: int,
     prestador_update: PrestadorUpdate,
     db: Session = Depends(get_db),
-    authorization: str = Header(None),
+    admin: dict = Depends(get_current_admin),
 ):
     """
     Atualizar prestador existente.
     Admin only (requer token).
     """
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de autenticação necessário",
-        )
-
-    try:
-        scheme, token = authorization.split()
-        if scheme.lower() != "bearer":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Scheme inválido. Use: Authorization: Bearer <token>",
-            )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Formato de Authorization inválido",
-        )
-
-    from app.utils.security import verify_token
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido ou expirado",
-        )
-
     prestador = db.query(Prestador).filter(Prestador.id == prestador_id).first()
 
     if not prestador:
@@ -231,39 +191,12 @@ def atualizar_prestador(
 def deletar_prestador(
     prestador_id: int,
     db: Session = Depends(get_db),
-    authorization: str = Header(None),
+    admin: dict = Depends(get_current_admin),
 ):
     """
     Deletar prestador.
     Admin only (requer token).
     """
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de autenticação necessário",
-        )
-
-    try:
-        scheme, token = authorization.split()
-        if scheme.lower() != "bearer":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Scheme inválido. Use: Authorization: Bearer <token>",
-            )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Formato de Authorization inválido",
-        )
-
-    from app.utils.security import verify_token
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido ou expirado",
-        )
-
     prestador = db.query(Prestador).filter(Prestador.id == prestador_id).first()
 
     if not prestador:
@@ -281,10 +214,11 @@ def deletar_prestador(
 def ativar_prestador(
     prestador_id: int,
     db: Session = Depends(get_db),
+    admin: dict = Depends(get_current_admin),
 ):
     """
     Ativar um prestador (mudar status de 'inativo' para 'ativo').
-    Público - sem autenticação para facilitar aprovação.
+    Admin only (requer token).
     """
     prestador = db.query(Prestador).filter(Prestador.id == prestador_id).first()
 
