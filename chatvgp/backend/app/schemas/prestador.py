@@ -1,6 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import datetime
+from app.utils.validators import validar_cpf_cnpj
 
 class CategoriaBase(BaseModel):
     id: int
@@ -18,6 +19,14 @@ class PrestadorBase(BaseModel):
     status: str = "ativo"
     notas: Optional[str] = None
 
+    @validator("cpf_cnpj")
+    def validar_cpf_cnpj_campo(cls, v):
+        if v is None or v.strip() == "":
+            return None
+        if not validar_cpf_cnpj(v):
+            raise ValueError("CPF/CNPJ inválido")
+        return v
+
 class PrestadorCreate(PrestadorBase):
     pass
 
@@ -30,6 +39,14 @@ class PrestadorUpdate(BaseModel):
     site: Optional[str] = None
     status: Optional[str] = None
     notas: Optional[str] = None
+
+    @validator("cpf_cnpj")
+    def validar_cpf_cnpj_campo(cls, v):
+        if v is None or v.strip() == "":
+            return None
+        if not validar_cpf_cnpj(v):
+            raise ValueError("CPF/CNPJ inválido")
+        return v
 
 class PrestadorResponse(BaseModel):
     id: int

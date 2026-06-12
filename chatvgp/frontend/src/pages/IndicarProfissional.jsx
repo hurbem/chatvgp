@@ -1,5 +1,41 @@
 import React, { useState, useEffect } from 'react';
 
+// Valida CPF (11 dígitos) ou CNPJ (14 dígitos), incluindo dígitos verificadores.
+function validarCpfCnpj(valor) {
+  const digitos = (valor || '').replace(/\D/g, '');
+
+  if (digitos.length === 11) {
+    if (/^(\d)\1{10}$/.test(digitos)) return false;
+    for (let i = 9; i <= 10; i++) {
+      let soma = 0;
+      for (let num = 0; num < i; num++) {
+        soma += parseInt(digitos[num], 10) * ((i + 1) - num);
+      }
+      const digito = ((soma * 10) % 11) % 10;
+      if (digito !== parseInt(digitos[i], 10)) return false;
+    }
+    return true;
+  }
+
+  if (digitos.length === 14) {
+    if (/^(\d)\1{13}$/.test(digitos)) return false;
+    const pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    for (const [i, pesos] of [[12, pesos1], [13, pesos2]]) {
+      let soma = 0;
+      for (let num = 0; num < i; num++) {
+        soma += parseInt(digitos[num], 10) * pesos[num];
+      }
+      const resto = soma % 11;
+      const digito = resto < 2 ? 0 : 11 - resto;
+      if (digito !== parseInt(digitos[i], 10)) return false;
+    }
+    return true;
+  }
+
+  return false;
+}
+
 export default function IndicarProfissional() {
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,6 +108,11 @@ export default function IndicarProfissional() {
 
     if (formData.categoria_ids.length > 3) {
       setMessage('❌ Máximo 3 categorias');
+      return;
+    }
+
+    if (formData.cpf_cnpj && formData.cpf_cnpj.trim() !== '' && !validarCpfCnpj(formData.cpf_cnpj)) {
+      setMessage('❌ CPF/CNPJ inválido');
       return;
     }
 
