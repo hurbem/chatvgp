@@ -1,6 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 
+function normalizarInstagram(valor) {
+  if (!valor || !valor.trim()) return '';
+  const v = valor.trim();
+  const match = v.match(/instagram\.com\/([^/?#\s]+)/);
+  if (match) return `https://www.instagram.com/${match[1].replace(/\/$/, '')}/`;
+  const username = v.replace(/^@/, '').trim();
+  return username ? `https://www.instagram.com/${username}/` : '';
+}
+
+function normalizarSite(valor) {
+  if (!valor || !valor.trim()) return '';
+  const v = valor.trim();
+  if (/^https?:\/\//i.test(v)) return v;
+  return `https://${v}`;
+}
+
 // Valida CPF (11 dígitos) ou CNPJ (14 dígitos), incluindo dígitos verificadores.
 function validarCpfCnpj(valor) {
   const digitos = (valor || '').replace(/\D/g, '');
@@ -128,8 +144,8 @@ export default function IndicarProfissional() {
         cpf_cnpj: formData.cpf_cnpj || null,
         categoria_ids: formData.categoria_ids,
         descricao: formData.descricao || null,
-        instagram: formData.instagram || null,
-        site: formData.site || null,
+        instagram: normalizarInstagram(formData.instagram) || null,
+        site: normalizarSite(formData.site) || null,
       };
 
       const prestadorResponse = await fetch(`${API_BASE_URL}/api/prestadores`, {

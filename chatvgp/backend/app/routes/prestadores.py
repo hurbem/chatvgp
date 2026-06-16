@@ -9,6 +9,7 @@ from app.schemas.prestador import (
     PrestadorResponse,
 )
 from app.utils.security import get_current_admin
+from app.utils.validators import normalizar_instagram, normalizar_site
 
 router = APIRouter(prefix="/api/prestadores", tags=["prestadores"])
 
@@ -129,6 +130,8 @@ def criar_prestador(
     # Criar prestador com status 'ativo' por padrão
     prestador_data = prestador.dict(exclude={"categoria_ids"})
     prestador_data['status'] = 'ativo'
+    prestador_data['instagram'] = normalizar_instagram(prestador_data.get('instagram'))
+    prestador_data['site'] = normalizar_site(prestador_data.get('site'))
     novo_prestador = Prestador(**prestador_data)
     db.add(novo_prestador)
     db.flush()  # Flush para obter o ID
@@ -173,6 +176,10 @@ def atualizar_prestador(
 
     # Atualizar apenas campos não-None
     dados_atualizacao = prestador_update.dict(exclude_unset=True)
+    if 'instagram' in dados_atualizacao:
+        dados_atualizacao['instagram'] = normalizar_instagram(dados_atualizacao['instagram'])
+    if 'site' in dados_atualizacao:
+        dados_atualizacao['site'] = normalizar_site(dados_atualizacao['site'])
     for campo, valor in dados_atualizacao.items():
         if valor is not None:
             setattr(prestador, campo, valor)

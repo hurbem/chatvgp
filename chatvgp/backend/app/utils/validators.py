@@ -1,3 +1,49 @@
+import re
+
+
+def normalizar_instagram(valor: str) -> str | None:
+    """
+    Normaliza o campo instagram para URL completa.
+    Aceita: 'usuario', '@usuario', 'instagram.com/usuario',
+            'https://www.instagram.com/usuario', etc.
+    Retorna sempre: 'https://www.instagram.com/usuario/'
+    """
+    if not valor or not valor.strip():
+        return None
+
+    v = valor.strip()
+
+    # Já é URL completa — extrai o username
+    match = re.search(r'instagram\.com/([^/?#\s]+)', v)
+    if match:
+        username = match.group(1).rstrip('/')
+        return f"https://www.instagram.com/{username}/"
+
+    # Remove @ e trata como username direto
+    username = v.lstrip('@').strip()
+    if username:
+        return f"https://www.instagram.com/{username}/"
+
+    return None
+
+
+def normalizar_site(valor: str) -> str | None:
+    """
+    Normaliza o campo site para URL com protocolo.
+    Aceita: 'exemplo.com.br', 'www.exemplo.com', 'https://exemplo.com', etc.
+    Retorna sempre com https:// se não tiver protocolo.
+    """
+    if not valor or not valor.strip():
+        return None
+
+    v = valor.strip()
+
+    if re.match(r'^https?://', v, re.IGNORECASE):
+        return v  # já tem protocolo
+
+    return f"https://{v}"
+
+
 def _apenas_digitos(valor: str) -> str:
     return "".join(filter(str.isdigit, valor or ""))
 

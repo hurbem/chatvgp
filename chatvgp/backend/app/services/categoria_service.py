@@ -1,5 +1,32 @@
 import requests
+import unicodedata
 from app.config import settings
+
+
+def _remover_acentos(texto: str) -> str:
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', texto)
+        if unicodedata.category(c) != 'Mn'
+    )
+
+
+def _expandir_aliases_com_acentos(aliases_str: str) -> str:
+    """
+    Para cada alias que contém acento, adiciona também a versão sem acento.
+    Ex: 'veterinária' → adiciona 'veterinaria'
+    """
+    if not aliases_str:
+        return aliases_str
+
+    aliases = [a.strip() for a in aliases_str.split(',') if a.strip()]
+    resultado = list(aliases)
+
+    for alias in aliases:
+        sem_acento = _remover_acentos(alias)
+        if sem_acento != alias and sem_acento not in resultado:
+            resultado.append(sem_acento)
+
+    return ','.join(resultado)
 
 def gerar_aliases_com_claude(nome_categoria: str) -> str:
     """
@@ -53,6 +80,7 @@ Responda APENAS com a lista de aliases, nada mais."""
         result = response.json()
 
         aliases = result["content"][0]["text"].strip()
+        aliases = _expandir_aliases_com_acentos(aliases)
         print(f"✅ Aliases gerados: {aliases}")
         return aliases
 
