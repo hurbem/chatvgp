@@ -87,7 +87,7 @@ export const ChatPage = () => {
                   <div key={p.id} style={{ padding: '15px', borderBottom: '1px solid #e5e7eb' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                       <h3 style={{ margin: 0 }}>{p.nome}</h3>
-                      <FounderBadge iverificado={p.verificado_hurbem} size="sm" showLabel />
+                      <FounderBadge verificado={p.verificado_hurbem} size="sm" showLabel />
                       {p.premium && (
                         <span title="Prestador Premium" style={{ backgroundColor: '#dbeafe', color: '#0c4a6e', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>
                           👑 Premium

@@ -128,16 +128,16 @@ function Tooltip({ children, text }) {
  * Props:
  *   size          "sm" | "md" | "lg"   — padrão "sm"
  *   showLabel     boolean              — exibe texto ao lado (padrão false)
- *   iverificado   boolean              — se false, não renderiza nada
+ *   verificado   boolean              — se false, não renderiza nada
  *   tooltipText   string               — texto do tooltip (opcional)
  */
 export function FounderBadge({
   size = "sm",
   showLabel = false,
-  iverificado = true,
+  verificado = true,
   tooltipText = "Verificado pelo Fundador VGP",
 }) {
-  if (!iverificado) return null;
+  if (!verificado) return null;
 
   const labelStyle = {
     sm: { fontSize: "11px", gap: "4px" },
