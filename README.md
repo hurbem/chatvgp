@@ -80,10 +80,27 @@ npm install
 npm start   # usa REACT_APP_API_URL ou http://localhost:8000
 ```
 
-## Scripts de categorias
+Para ter dados de exemplo no banco local: `psql "<DATABASE_URL local>" -f chatvgp/backend/scripts/seed_local.sql` (⚠️ nunca em produção).
 
-Ficam em `chatvgp/backend/scripts/` e leem a senha do ambiente:
+## Criar categorias
 
 ```bash
-ADMIN_PASSWORD='sua-senha' ./chatvgp/backend/scripts/add-categoria-mesas.sh
+ADMIN_PASSWORD='sua-senha' ./chatvgp/backend/scripts/add-categoria.sh \
+  "Banho e Tosa" "Banho, tosa e higiene para pets." \
+  "Aluguel Mesas e Cadeiras" "Aluguel de mesas e cadeiras para eventos."
 ```
+
+Os aliases de busca são gerados pelo Claude automaticamente.
+
+## Deploy
+
+Push no `main` → Render (backend) e Vercel (frontend) fazem o deploy sozinhos.
+
+**Render (`chatvgp-api`)**
+- Root Directory: `chatvgp/backend`
+- Start Command: `gunicorn -w 4 -b 0.0.0.0:$PORT app.main:app --worker-class uvicorn.workers.UvicornWorker`
+- Environment: as variáveis da tabela acima + `FORWARDED_ALLOW_IPS=*` (para o rate limit ver o IP real do usuário, não o do proxy do Render)
+
+**Vercel (`chatvgp`)**
+- Root Directory: `chatvgp/frontend` · Framework: Create React App
+- Environment: `REACT_APP_API_URL=https://chatvgp-api.onrender.com`

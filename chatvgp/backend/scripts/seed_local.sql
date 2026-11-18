@@ -1,11 +1,9 @@
 -- ============================================================
--- Seed de dados iniciais (idempotente - usa ON CONFLICT DO NOTHING)
--- ============================================================
--- Rode DEPOIS de migration_999_fix_producao_completo.sql
---   psql "$DATABASE_URL" -f migration_999_seed_dados.sql
+-- Seed de dados para DESENVOLVIMENTO LOCAL
+-- ⚠️ NÃO rode em produção: cria prestadores fictícios ativos.
 --
--- Ajuste/complete a lista de categorias e aliases conforme
--- as categorias já cadastradas em produção (via /api/categorias).
+-- Uso (com o backend já iniciado uma vez, para criar as tabelas):
+--   psql "postgresql://user:password@localhost:5432/chatvgp" -f chatvgp/backend/scripts/seed_local.sql
 -- ============================================================
 
 -- ---------------------------------------------------------
