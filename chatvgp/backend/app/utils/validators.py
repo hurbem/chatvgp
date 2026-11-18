@@ -1,7 +1,8 @@
 import re
+from typing import Optional
 
 
-def normalizar_instagram(valor: str) -> str | None:
+def normalizar_instagram(valor: str) -> Optional[str]:
     """
     Normaliza o campo instagram para URL completa.
     Aceita: 'usuario', '@usuario', 'instagram.com/usuario',
@@ -27,7 +28,7 @@ def normalizar_instagram(valor: str) -> str | None:
     return None
 
 
-def normalizar_site(valor: str) -> str | None:
+def normalizar_site(valor: str) -> Optional[str]:
     """
     Normaliza o campo site para URL com protocolo.
     Aceita: 'exemplo.com.br', 'www.exemplo.com', 'https://exemplo.com', etc.

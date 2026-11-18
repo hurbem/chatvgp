@@ -61,20 +61,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rodar migrações no startup
-@app.on_event("startup")
-async def run_migrations():
-    """Executa migrações pendentes no startup"""
-    try:
-        sys.path.insert(0, os.path.dirname(__file__) + "/..")
-
-        from migrations.migrations_001_refactor_prestador import run_migration
-        print("\n🔄 Verificando e executando migrações...")
-        run_migration()
-    except Exception as e:
-        print(f"⚠️ Erro ao executar migrações: {e}")
-        # Continua mesmo se falhar (pode ser que já tenha rodado)
-
 # Incluir rotas se disponíveis
 if routes_available:
     app.include_router(auth.router)

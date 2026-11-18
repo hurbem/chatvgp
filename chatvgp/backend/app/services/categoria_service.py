@@ -33,10 +33,11 @@ def gerar_aliases_com_claude(nome_categoria: str) -> str:
     Usa a Claude API via REST para gerar aliases para uma categoria.
     Retorna uma string com aliases separados por vírgula.
     """
-    try:
-        print(f"🔑 API Key presente: {bool(settings.CLAUDE_API_KEY)}")
-        print(f"🔑 API Key: {settings.CLAUDE_API_KEY[:10]}..." if settings.CLAUDE_API_KEY else "🔑 API Key: VAZIA")
+    if not settings.CLAUDE_API_KEY:
+        print("⚠️ CLAUDE_API_KEY não configurada - categoria criada sem aliases")
+        return ""
 
+    try:
         prompt = f"""Você é um assistente que gera palavras-chave e aliases para categorias de serviços profissionais.
 
 Dada a categoria: "{nome_categoria}"

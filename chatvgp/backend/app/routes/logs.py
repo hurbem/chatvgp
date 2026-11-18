@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Log
@@ -8,7 +8,7 @@ from sqlalchemy import desc, func
 router = APIRouter(prefix="/api/logs", tags=["logs"])
 
 @router.get("/buscas-nao-identificadas")
-def buscas_nao_identificadas(limit: int = 100, db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)):
+def buscas_nao_identificadas(limit: int = Query(100, ge=1, le=500), db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)):
     """
     Retorna as últimas pesquisas que não tiveram categoria identificada.
     Admin only (requer token).
@@ -40,7 +40,7 @@ def buscas_nao_identificadas(limit: int = 100, db: Session = Depends(get_db), ad
         )
 
 @router.get("/buscas-sucesso")
-def buscas_com_sucesso(limit: int = 100, db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)):
+def buscas_com_sucesso(limit: int = Query(100, ge=1, le=500), db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)):
     """
     Retorna as últimas pesquisas que tiveram categoria identificada com sucesso.
     Admin only (requer token).
@@ -72,7 +72,7 @@ def buscas_com_sucesso(limit: int = 100, db: Session = Depends(get_db), admin: d
         )
 
 @router.get("/todas")
-def todos_os_logs(limit: int = 100, db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)):
+def todos_os_logs(limit: int = Query(100, ge=1, le=500), db: Session = Depends(get_db), admin: dict = Depends(get_current_admin)):
     """
     Retorna todos os logs da aplicação.
     Admin only (requer token).
