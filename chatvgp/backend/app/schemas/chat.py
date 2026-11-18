@@ -9,6 +9,7 @@ class PrestadorResult(BaseModel):
     nome: str
     whatsapp: str
     link_whatsapp: str
+    descricao: Optional[str] = None
     instagram: Optional[str] = None
     site: Optional[str] = None
     notas: Optional[str] = None
