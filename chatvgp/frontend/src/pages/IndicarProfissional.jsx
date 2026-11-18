@@ -154,9 +154,12 @@ export default function IndicarProfissional() {
         body: JSON.stringify(prestadorData),
       });
 
-      if (!prestadorResponse.ok) throw new Error('Erro ao criar prestador');
+      if (!prestadorResponse.ok) {
+        const data = await prestadorResponse.json().catch(() => ({}));
+        throw new Error(typeof data.detail === 'string' ? data.detail : 'Erro ao cadastrar prestador');
+      }
 
-      setMessage('✅ Prestador cadastrado com sucesso!');
+      setMessage('✅ Cadastro recebido! Ele aparecerá na busca após aprovação.');
       setFormData({
         categoria_ids: [],
         nome_prestador: '',
@@ -168,7 +171,7 @@ export default function IndicarProfissional() {
         site: '',
       });
     } catch (error) {
-      setMessage('❌ Erro ao indicar prestador');
+      setMessage(`❌ ${error.message || 'Erro ao cadastrar prestador'}`);
       console.error('Erro:', error);
     } finally {
       setSubmitLoading(false);

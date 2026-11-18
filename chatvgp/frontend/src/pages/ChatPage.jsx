@@ -25,10 +25,14 @@ export const ChatPage = () => {
         body: JSON.stringify({ pergunta }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(typeof data.detail === 'string' ? data.detail : 'Erro ao buscar prestadores');
+      }
       setResultado(data);
     } catch (err) {
-      setError('Erro ao buscar prestadores');
+      setResultado(null);
+      setError(err.message || 'Erro ao buscar prestadores');
     } finally {
       setLoading(false);
     }
@@ -92,7 +96,6 @@ export const ChatPage = () => {
                     </div>
 
                     <p>📱 {p.whatsapp}</p>
-                    {p.email && <p>📧 {p.email}</p>}
 
                     {p.descricao && (
                       <p style={{ fontSize: '14px', color: '#444', marginBottom: '10px', padding: '10px', backgroundColor: '#f9fafb', borderRadius: '4px', borderLeft: '3px solid #3b82f6' }}>

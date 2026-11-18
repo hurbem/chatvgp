@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { ChatPage } from './pages/ChatPage';
 import IndicarProfissional from './pages/IndicarProfissional';
 
-// Versão do build - atualizar manualmente ou via CI/CD
-const BUILD_DATE = new Date().toLocaleDateString('pt-BR');
+// Data do build, gravada no momento do `npm run build` (ver script "build" no package.json).
+// Se não existir (ex.: em `npm start`), o selo não é exibido.
+const BUILD_DATE = process.env.REACT_APP_BUILD_DATE;
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('chat');
@@ -59,7 +60,7 @@ export default function App() {
         )}
 
         {/* Version Display */}
-        <div
+        {BUILD_DATE && <div
           style={{
             padding: '6px 12px',
             backgroundColor: '#6b7280',
@@ -74,7 +75,7 @@ export default function App() {
           title="Data do último build"
         >
           {BUILD_DATE}
-        </div>
+        </div>}
       </div>
     </>
   );
