@@ -1,6 +1,6 @@
 #!/bin/bash
 API_URL="${API_URL:-https://chatvgp-api.onrender.com}"
-SECRET_KEY="almDe44dPMXo2V1axX20DfkQpckyaN4Z2J8OzjiXWbU"
+SECRET_KEY="${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD antes de rodar. Ex: ADMIN_PASSWORD=sua-senha ./criar_categorias_comercio.sh}"
 
 echo "🔐 Fazendo login..."
 TOKEN=$(curl -s -X POST "$API_URL/api/auth/login" \

@@ -1,7 +1,9 @@
 from pydantic import BaseModel, validator
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import datetime
 from app.utils.validators import validar_cpf_cnpj
+
+StatusPrestador = Literal["ativo", "inativo", "pendente"]
 
 class CategoriaBase(BaseModel):
     id: int
@@ -16,7 +18,6 @@ class PrestadorBase(BaseModel):
     descricao: Optional[str] = None
     instagram: Optional[str] = None
     site: Optional[str] = None
-    status: str = "ativo"
     notas: Optional[str] = None
 
     @validator("cpf_cnpj")
@@ -37,8 +38,10 @@ class PrestadorUpdate(BaseModel):
     descricao: Optional[str] = None
     instagram: Optional[str] = None
     site: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[StatusPrestador] = None
     notas: Optional[str] = None
+    verificado_hurbem: Optional[bool] = None
+    premium: Optional[bool] = None
 
     @validator("cpf_cnpj")
     def validar_cpf_cnpj_campo(cls, v):

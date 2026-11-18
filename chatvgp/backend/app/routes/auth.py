@@ -1,23 +1,31 @@
+import hmac
+from datetime import timedelta
+
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
+
 from app.config import settings
 from app.utils.security import create_access_token
-from datetime import timedelta
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+
 class LoginRequest(BaseModel):
     senha: str
+
 
 @router.post("/login")
 def login(request: LoginRequest):
     """
     Endpoint de login para gerar JWT token.
-    Senha: ADMIN_SECRET (configurar em env var).
+    Senha: variável de ambiente ADMIN_PASSWORD.
     """
-    admin_secret = settings.SECRET_KEY  # Usar SECRET_KEY como senha admin
+    admin_password = settings.ADMIN_PASSWORD
 
-    if request.senha != admin_secret:
+    # Sem ADMIN_PASSWORD configurada, ninguém consegue logar
+    if not admin_password or not hmac.compare_digest(
+        request.senha.encode(), admin_password.encode()
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Senha incorreta",

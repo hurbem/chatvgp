@@ -5,15 +5,15 @@
 # ============================================================
 # Uso:
 #   chmod +x criar_categorias.sh
-#   API_URL=https://chatvgp-api.onrender.com SECRET_KEY=sua_chave ./criar_categorias.sh
+#   API_URL=https://chatvgp-api.onrender.com ADMIN_PASSWORD=sua_senha ./criar_categorias.sh
 # ============================================================
 
 API_URL="${API_URL:-https://chatvgp-api.onrender.com}"
-SECRET_KEY="almDe44dPMXo2V1axX20DfkQpckyaN4Z2J8OzjiXWbU"
+SECRET_KEY="${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD antes de rodar. Ex: ADMIN_PASSWORD=sua-senha ./criar_categorias.sh}"
 
 if [ -z "$SECRET_KEY" ]; then
   echo "❌ Defina a variável SECRET_KEY antes de rodar"
-  echo "   Exemplo: SECRET_KEY=sua_chave ./criar_categorias.sh"
+  echo "   Exemplo: ADMIN_PASSWORD=sua_senha ./criar_categorias.sh"
   exit 1
 fi
 
