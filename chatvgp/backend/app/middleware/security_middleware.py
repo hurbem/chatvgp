@@ -40,10 +40,17 @@ BLOCKED_SCRAPERS = [
     'headlesschrome',
 ]
 
-# Rate limiting em memória (IP -> lista de timestamps)
+# Rate limiting em memória (IP -> lista de timestamps).
+# Obs: cada worker do gunicorn tem sua própria memória, então o limite
+# efetivo é aproximadamente (limite x número de workers).
 rate_limit_store = defaultdict(list)
 RATE_LIMIT_PER_MINUTE = 30
 RATE_LIMIT_PER_HOUR = 100
+
+# Limite mais rígido para tentativas de login (dificulta adivinhar a senha)
+login_attempts_store = defaultdict(list)
+LOGIN_ATTEMPTS_PER_MINUTE = 5
+LOGIN_PATH = "/api/auth/login"
 
 
 class SecurityMiddleware(BaseHTTPMiddleware):
@@ -78,6 +85,13 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             )
 
         # 4. Rate Limiting
+        if request.url.path == LOGIN_PATH and not self._check_login_limit(client_ip):
+            logger.warning(f"🚫 Bloqueado: muitas tentativas de login | IP: {client_ip}")
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Muitas tentativas de login. Aguarde um minuto."}
+            )
+
         if not self._check_rate_limit(client_ip):
             logger.warning(f"🚫 Bloqueado: Rate limit excedido | IP: {client_ip}")
             return JSONResponse(
@@ -109,9 +123,36 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         return any(scraper in user_agent for scraper in BLOCKED_SCRAPERS)
 
     @staticmethod
+    def _check_login_limit(client_ip: str) -> bool:
+        """Verifica se IP excedeu o limite de tentativas de login por minuto"""
+        now = datetime.now()
+        tentativas = [
+            ts for ts in login_attempts_store[client_ip]
+            if (now - ts) < timedelta(minutes=1)
+        ]
+        if len(tentativas) >= LOGIN_ATTEMPTS_PER_MINUTE:
+            login_attempts_store[client_ip] = tentativas
+            return False
+        tentativas.append(now)
+        login_attempts_store[client_ip] = tentativas
+        return True
+
+    @staticmethod
+    def _limpar_ips_antigos(now: datetime) -> None:
+        """Remove da memória IPs sem requisições na última hora (evita crescer para sempre)."""
+        for store, janela in ((rate_limit_store, timedelta(hours=1)),
+                              (login_attempts_store, timedelta(minutes=1))):
+            for ip in [ip for ip, ts in store.items() if not ts or (now - ts[-1]) >= janela]:
+                del store[ip]
+
+    @staticmethod
     def _check_rate_limit(client_ip: str) -> bool:
         """Verifica se IP excedeu rate limit"""
         now = datetime.now()
+
+        # De vez em quando, limpa IPs inativos
+        if len(rate_limit_store) > 1000:
+            SecurityMiddleware._limpar_ips_antigos(now)
 
         # Limpar timestamps antigos (> 1 hora)
         rate_limit_store[client_ip] = [
