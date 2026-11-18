@@ -1,317 +1,89 @@
-# ChatVGP - AI-Powered Service Provider Discovery
+# ChatVGP
 
-Plataforma de busca de prestadores de serviços por inteligência artificial natural.
+Busca de prestadores de serviço em Vargem Grande Paulista-SP. O usuário escreve o que precisa ("preciso de um encanador") e recebe prestadores da categoria com link direto para o WhatsApp.
 
-## 🏗️ Arquitetura
+## Arquitetura
 
 ```
-Frontend (React + Vite)          Backend (FastAPI)              Database (PostgreSQL)
-├── Vercel                       ├── Render                     ├── Render
-├── TypeScript                   ├── Python 3.11                └── SQLAlchemy ORM
-├── Tailwind CSS                 ├── Uvicorn + Gunicorn
-└── Vite                         └── SQLAlchemy
+Frontend (React, create-react-app)   Backend (FastAPI)            Banco
+└── Vercel                           └── Render (Docker)          └── PostgreSQL (Render)
 ```
-
-## 🚀 URLs de Produção
 
 - **Frontend:** https://chatvgp.vercel.app
-- **Backend API:** https://chatvgp-api.onrender.com
-- **Documentação:** https://chatvgp-api.onrender.com/docs
+- **API:** https://chatvgp-api.onrender.com (documentação interativa em `/docs`)
 
-## 📋 Endpoints da API
+## Como a busca funciona
 
-### Chat - Busca de Prestadores
+1. A pergunta é quebrada em palavras (sem acento, ignorando palavras curtas como "de", "um").
+2. Cada categoria recebe pontos pelas palavras em comum com o **nome** ou com um **alias** (um alias só conta se todas as suas palavras estiverem na pergunta).
+3. Vence a categoria com mais pontos; no empate, a de menor `ordem`.
+4. Retorna até 5 prestadores **ativos** da categoria: premium primeiro, depois verificados, depois por nome.
 
-```bash
-POST /api/chat/buscar
-Content-Type: application/json
+Os aliases são gerados pelo Claude quando a categoria é criada (`CLAUDE_API_KEY`).
 
-{
-  "pergunta": "preciso de um encanador"
-}
-```
+## Fluxo de cadastro
 
-**Resposta:**
-```json
-{
-  "pergunta": "preciso de um encanador",
-  "categoria": "Encanador",
-  "condominio": "Haras Bela Vista",
-  "prestadores": [
-    {
-      "id": 1,
-      "nome": "Carlos Silva",
-      "whatsapp": "11987654321",
-      "link_whatsapp": "https://wa.me/...",
-      "score_final": 4.5,
-      "feedback_count": 10,
-      "qualidade_media": 4.5,
-      "material_acertou_pct": 0.8,
-      "prazo_cumprido_pct": 0.9,
-      "custo_mantido_pct": 0.7
-    }
-  ],
-  "total_resultados": 1
-}
-```
+1. O prestador se cadastra pelo site → entra com status **`pendente`** (não aparece na busca).
+2. O admin vê os pendentes em `GET /api/prestadores/admin/lista`.
+3. O admin aprova com `PATCH /api/prestadores/{id}/ativar`.
 
-### Autenticação - Login
+## Endpoints
 
-```bash
-POST /api/auth/login
-Content-Type: application/json
+| Método | Rota | Acesso |
+|---|---|---|
+| POST | `/api/chat/buscar` `{"pergunta": "..."}` | público |
+| GET | `/api/categorias` | público |
+| GET | `/api/prestadores`, `/api/prestadores/{id}` | público (só ativos, sem email/CPF) |
+| POST | `/api/prestadores` | público (entra como pendente) |
+| POST | `/api/prestadores/{id}/clique-whatsapp` | público |
+| POST | `/api/auth/login` `{"senha": "<ADMIN_PASSWORD>"}` | público (5 tentativas/min) |
+| GET | `/api/prestadores/admin/lista?status_filter=pendente` | admin |
+| GET | `/api/prestadores/admin/{id}` | admin |
+| PUT / DELETE | `/api/prestadores/{id}` | admin |
+| PATCH | `/api/prestadores/{id}/ativar` | admin |
+| POST / PUT / DELETE | `/api/categorias...` | admin |
+| GET | `/api/logs/...` | admin |
 
-{
-  "senha": "dev-secret-key"
-}
-```
+Rotas de admin exigem o header `Authorization: Bearer <token>`, obtido no login.
 
-**Resposta:**
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer",
-  "expires_in_days": 7
-}
-```
+## Variáveis de ambiente (backend)
 
-### Prestadores - CRUD
+| Variável | Descrição |
+|---|---|
+| `DATABASE_URL` | URL do PostgreSQL |
+| `SECRET_KEY` | Chave de assinatura dos tokens JWT |
+| `ADMIN_PASSWORD` | Senha de login do admin (mín. 16 caracteres, diferente da `SECRET_KEY`) |
+| `ENVIRONMENT` | `production` no Render — o app **não sobe** se as duas chaves acima estiverem ausentes/fracas |
+| `CLAUDE_API_KEY` | Para gerar aliases de categorias (opcional) |
+| `CORS_ORIGINS` | Origens permitidas, separadas por vírgula |
 
-**Listar (GET):**
-```bash
-GET /api/prestadores?categoria_id=1&status=ativo
-```
+Gere chaves com: `python3 -c "import secrets; print(secrets.token_urlsafe(32))"`
 
-**Criar (POST):**
-```bash
-POST /api/prestadores
-Authorization: Bearer <token>
-Content-Type: application/json
+**Nunca** coloque senhas ou chaves em arquivos do repositório.
 
-{
-  "nome": "João Silva",
-  "whatsapp": "11987654321",
-  "categoria_id": 1,
-  "condominio_ids": [1],
-  "status": "ativo"
-}
-```
-
-**Atualizar (PUT):**
-```bash
-PUT /api/prestadores/1
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "nome": "João Silva Atualizado",
-  "status": "inativo"
-}
-```
-
-**Deletar (DELETE):**
-```bash
-DELETE /api/prestadores/1
-Authorization: Bearer <token>
-```
-
-### Feedback - CRUD
-
-**Criar (POST):**
-```bash
-POST /api/feedback
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "prestador_id": 1,
-  "condominio_id": 1,
-  "categoria_id": 1,
-  "data_feedback": "2026-06-02",
-  "qualidade": 5,
-  "material_estimativa": "Acertou",
-  "prazo_manteve": true,
-  "custo_manteve": true,
-  "observacoes": "Excelente trabalho!",
-  "seu_feedback": false
-}
-```
-
-### Categorias
+## Rodando localmente
 
 ```bash
-GET /api/categorias
-POST /api/categorias (requer autenticação)
+# Backend
+cd chatvgp/backend
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # e preencha
+uvicorn app.main:app --reload
+
+# Testes
+pytest
+
+# Frontend
+cd chatvgp/frontend
+npm install
+npm start   # usa REACT_APP_API_URL ou http://localhost:8000
 ```
 
-### Condomínios
+## Scripts de categorias
+
+Ficam em `chatvgp/backend/scripts/` e leem a senha do ambiente:
 
 ```bash
-GET /api/condominios
-POST /api/condominios (requer autenticação)
+ADMIN_PASSWORD='sua-senha' ./chatvgp/backend/scripts/add-categoria-mesas.sh
 ```
-
-### Health Check
-
-```bash
-GET /health
-```
-
-## 🔐 Autenticação
-
-Endpoints de escrita (POST, PUT, DELETE) requerem JWT token:
-
-```bash
-curl -X POST https://chatvgp-api.onrender.com/api/prestadores \
-  -H "Authorization: Bearer <seu_token>" \
-  -H "Content-Type: application/json" \
-  -d '{"nome": "João", "whatsapp": "11987654321", "categoria_id": 1, "condominio_ids": [1], "status": "ativo"}'
-```
-
-**Como obter token:**
-
-1. Chamar `/api/auth/login` com a senha (padrão: `dev-secret-key`)
-2. Guardar o `access_token` retornado
-3. Usar no header `Authorization: Bearer <token>` em requisições protegidas
-
-Token expira em **7 dias**.
-
-## 🗂️ Estrutura do Projeto
-
-```
-chatvgp/
-├── backend/
-│   ├── app/
-│   │   ├── routes/           # Endpoints da API
-│   │   │   ├── auth.py       # Login e tokens JWT
-│   │   │   ├── chat.py       # Busca de prestadores
-│   │   │   ├── prestadores.py
-│   │   │   ├── feedback.py
-│   │   │   ├── categorias.py
-│   │   │   └── condominios.py
-│   │   ├── models/           # SQLAlchemy ORM models
-│   │   ├── schemas/          # Pydantic validation
-│   │   ├── services/         # Business logic
-│   │   ├── config.py         # Environment variables
-│   │   ├── database.py       # DB connection
-│   │   └── main.py           # FastAPI app
-│   ├── requirements-render.txt
-│   ├── Dockerfile
-│   └── runtime.txt
-├── chatvgp/frontend/
-│   ├── src/
-│   │   ├── pages/             # ChatPage, IndicarProfissional, etc.
-│   │   └── App.jsx
-│   ├── .env.example           # Environment variables
-│   └── package.json
-└── README.md
-```
-
-## 🔧 Variáveis de Ambiente
-
-### Backend (Render)
-
-```
-DATABASE_URL=postgresql://user:pass@host/chatvgp
-SECRET_KEY=seu-secret-key-jwt
-CLAUDE_API_KEY=sk-ant-... (opcional - usar keyword matching se vazio)
-ENVIRONMENT=production
-DEBUG=False
-CORS_ORIGINS=https://chatvgp.vercel.app,https://chatvgp.com
-```
-
-### Frontend (Vercel)
-
-```
-REACT_APP_API_BASE_URL=https://chatvgp-api.onrender.com/api
-```
-
-## 📊 Modelos de Dados
-
-### Prestador
-- `id`: Integer (PK)
-- `nome`: String (indexed)
-- `whatsapp`: String
-- `categoria_id`: Integer (FK)
-- `condominio_ids`: Array[Integer]
-- `status`: String (ativo/inativo)
-- `notas`: String
-- `criado_em`: DateTime
-
-### Feedback
-- `id`: Integer (PK)
-- `prestador_id`: Integer (FK)
-- `condominio_id`: Integer (FK)
-- `categoria_id`: Integer (FK)
-- `qualidade`: Integer (1-5)
-- `material_estimativa`: String
-- `prazo_manteve`: Boolean
-- `custo_manteve`: Boolean
-- `observacoes`: String
-- `seu_feedback`: Boolean
-- `data_feedback`: Date
-- `criado_em`: DateTime
-
-### Categoria
-- `id`: Integer (PK)
-- `nome`: String (unique)
-- `criado_em`: DateTime
-
-### Condominio
-- `id`: Integer (PK)
-- `nome`: String
-- `cidade`: String
-- `criado_em`: DateTime
-
-## 🧪 Testes
-
-### Buscar prestador de encanador
-```bash
-curl -X POST https://chatvgp-api.onrender.com/api/chat/buscar \
-  -H "Content-Type: application/json" \
-  -d '{"pergunta": "preciso de um encanador"}'
-```
-
-### Buscar prestador de desenvolvedor
-```bash
-curl -X POST https://chatvgp-api.onrender.com/api/chat/buscar \
-  -H "Content-Type: application/json" \
-  -d '{"pergunta": "preciso de um desenvolvedor"}'
-```
-
-### Listar todos os prestadores
-```bash
-curl https://chatvgp-api.onrender.com/api/prestadores
-```
-
-### Fazer login e obter token
-```bash
-curl -X POST https://chatvgp-api.onrender.com/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"senha": "dev-secret-key"}'
-```
-
-## 🚀 Deploy
-
-### Backend (Render)
-1. Conectar repositório GitHub
-2. Build command: `pip install -r requirements-render.txt`
-3. Start command: `gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:10000`
-4. Environment variables: DATABASE_URL, SECRET_KEY, etc.
-
-### Frontend (Vercel)
-1. Conectar repositório GitHub
-2. Framework: Vite
-3. Build output: `dist`
-4. Environment variables: VITE_API_BASE_URL
-
-## 📝 Notas
-
-- **Keyword Matching:** Categorias e condomínios são identificados por palavras-chave na pergunta
-- **JWT:** Tokens válidos por 7 dias
-- **CORS:** Configurado para aceitar requisições do frontend
-- **Feedback:** Score final é calculado baseado em qualidade, material estimativa, prazo e custo
-
-## 📧 Contato
-
-hurbem@gmail.com
