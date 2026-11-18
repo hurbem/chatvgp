@@ -30,23 +30,10 @@ def gerar_aliases(request: AliasRequest, admin: dict = Depends(get_current_admin
     Resposta:
     {"nome": "Limpeza Residencial", "aliases": "limpeza,residencial,casa,..."}
     """
-    print(f"\n{'='*60}")
-    print(f"🧪 TESTE DE ALIASES")
-    print(f"{'='*60}")
-    print(f"📝 Categoria: {request.nome}")
-
     try:
         aliases = gerar_aliases_com_claude(request.nome)
-
-        print(f"✅ Aliases gerados com sucesso!")
-        print(f"{'='*60}\n")
-
-        return AliasResponse(
-            nome=request.nome,
-            aliases=aliases
-        )
-
     except Exception as e:
-        print(f"❌ Erro ao gerar aliases: {e}")
-        print(f"{'='*60}\n")
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar aliases: {str(e)}")
+        logger.exception("Erro ao gerar aliases")
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar aliases: {e}")
+
+    return AliasResponse(nome=request.nome, aliases=aliases)

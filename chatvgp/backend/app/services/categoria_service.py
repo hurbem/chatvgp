@@ -1,6 +1,11 @@
-import requests
+import logging
 import unicodedata
+
+import requests
+
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def _remover_acentos(texto: str) -> str:
@@ -34,7 +39,7 @@ def gerar_aliases_com_claude(nome_categoria: str) -> str:
     Retorna uma string com aliases separados por vírgula.
     """
     if not settings.CLAUDE_API_KEY:
-        print("⚠️ CLAUDE_API_KEY não configurada - categoria criada sem aliases")
+        logger.warning("CLAUDE_API_KEY não configurada - categoria criada sem aliases")
         return ""
 
     try:
@@ -53,8 +58,6 @@ Requisitos:
 - Exemplo format: "palavra1,palavra2,palavra3"
 
 Responda APENAS com a lista de aliases, nada mais."""
-
-        print(f"📤 Enviando prompt para Claude...")
 
         headers = {
             "x-api-key": settings.CLAUDE_API_KEY,
@@ -82,11 +85,9 @@ Responda APENAS com a lista de aliases, nada mais."""
 
         aliases = result["content"][0]["text"].strip()
         aliases = _expandir_aliases_com_acentos(aliases)
-        print(f"✅ Aliases gerados: {aliases}")
+        logger.info(f"Aliases gerados para '{nome_categoria}': {aliases}")
         return aliases
 
     except Exception as e:
-        print(f"❌ ERRO ao gerar aliases com Claude: {type(e).__name__}: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.exception(f"Erro ao gerar aliases com Claude para '{nome_categoria}'")
         return ""  # Retorna vazio se falhar

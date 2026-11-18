@@ -21,3 +21,4 @@ class ChatResponse(BaseModel):
     categoria: Optional[str] = None
     prestadores: List[PrestadorResult]
     total_resultados: int
+    mensagem: Optional[str] = None

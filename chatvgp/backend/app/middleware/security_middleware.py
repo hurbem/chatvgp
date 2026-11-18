@@ -108,7 +108,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
-        logger.info(f"✅ Requisição OK | IP: {client_ip} | Path: {request.url.path}")
+        logger.debug(f"✅ Requisição OK | IP: {client_ip} | Path: {request.url.path}")
 
         return response
 

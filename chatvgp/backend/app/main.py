@@ -1,55 +1,31 @@
+import logging
+import sys
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.config import settings, CORS_ORIGINS_LIST
 from app.database import Base, engine
 from app.middleware import SecurityMiddleware
-import logging
-import sys
-import os
+from app import models  # noqa: F401  (registra os models no Base)
+from app.routes import chat, prestadores, categorias, auth, logs, aliases
 
-# Criar diretório de logs se não existir
-logs_dir = "logs"
-if not os.path.exists(logs_dir):
-    os.makedirs(logs_dir)
-
-# Configurar logging para capturar logs de pesquisas
 logging.basicConfig(
-    level=logging.WARNING,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler('logs/chatvgp.log', mode='a')
-    ]
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
 
-# Importar models para registrar no Base
-try:
-    from app.models import Categoria, Prestador, Log, PrestadorCategoria
-    print("✅ Models importados")
-except Exception as e:
-    print(f"⚠️ Aviso ao importar models: {e}")
-
-# Criar tabelas
-try:
-    Base.metadata.create_all(bind=engine)
-    print("✅ Tabelas criadas/verificadas com sucesso")
-except Exception as e:
-    print(f"⚠️ Aviso ao criar tabelas: {e}")
-
-try:
-    from app.routes import chat, prestadores, categorias, auth, logs, aliases
-    routes_available = True
-except Exception as e:
-    print(f"Warning: Could not load routes: {e}")
-    routes_available = False
+# Cria as tabelas que ainda não existirem (não altera tabelas existentes)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="ChatVGP API",
-    description="API para ChatVGP - Busca de prestadores por IA",
-    version="0.1.0",
+    description="API para ChatVGP - Busca de prestadores de serviço",
+    version="0.2.0",
 )
 
-# Security Middleware (deve ser PRIMEIRO)
+# Security Middleware (bloqueio de bots + rate limit)
 app.add_middleware(SecurityMiddleware)
 
 # CORS
@@ -61,23 +37,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Incluir rotas se disponíveis
-if routes_available:
-    app.include_router(auth.router)
-    app.include_router(chat.router)
-    app.include_router(prestadores.router)
-    app.include_router(categorias.router)
-    app.include_router(logs.router)
-    app.include_router(aliases.router)
+app.include_router(auth.router)
+app.include_router(chat.router)
+app.include_router(prestadores.router)
+app.include_router(categorias.router)
+app.include_router(logs.router)
+app.include_router(aliases.router)
+
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "0.1.0"}
+    return {"status": "ok", "version": app.version, "environment": settings.ENVIRONMENT}
+
 
 @app.get("/")
 def root():
-    return {"message": "ChatVGP API v0.1.0 - Use /docs para documentação"}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    return {"message": "ChatVGP API - Use /docs para documentação"}

@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List
 from pydantic import BaseModel
 from app.database import get_db
 from app.models import Categoria
@@ -25,7 +23,7 @@ class CategoriaResponse(BaseModel):
 @router.get("")
 def listar_categorias(db: Session = Depends(get_db)):
     """Listar todas as categorias (público) - ordenadas por 'ordem'."""
-    categorias = db.query(Categoria).order_by(text("ordem")).all()
+    categorias = db.query(Categoria).order_by(Categoria.ordem, Categoria.nome).all()
     return [
         {
             "id": c.id,
@@ -56,7 +54,6 @@ def criar_categoria(
         raise HTTPException(status_code=400, detail="Categoria já existe")
 
     # Gerar aliases com Claude API
-    print(f"🔄 Gerando aliases para '{categoria.nome}'...")
     aliases = gerar_aliases_com_claude(categoria.nome)
 
     # Criar categoria com aliases

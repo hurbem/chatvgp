@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     CLAUDE_API_KEY: str = os.getenv("CLAUDE_API_KEY", "")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
-    DEBUG: bool = os.getenv("DEBUG", "False") == "True"
 
     class Config:
         case_sensitive = True
