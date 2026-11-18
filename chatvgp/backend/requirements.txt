@@ -1,5 +1,5 @@
 # Dependências de desenvolvimento (inclui as de produção).
-# Produção (Render) usa requirements-render.txt.
+# Produção (Render, via Dockerfile) usa requirements-render.txt.
 -r requirements-render.txt
 httpx==0.25.2  # usado pelo TestClient nos testes
 pytest==7.4.3

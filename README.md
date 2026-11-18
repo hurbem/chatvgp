@@ -97,9 +97,10 @@ Os aliases de busca são gerados pelo Claude automaticamente.
 Push no `main` → Render (backend) e Vercel (frontend) fazem o deploy sozinhos.
 
 **Render (`chatvgp-api`)**
-- Root Directory: `chatvgp/backend`
-- Start Command: `gunicorn -w 4 -b 0.0.0.0:$PORT app.main:app --worker-class uvicorn.workers.UvicornWorker`
-- Environment: as variáveis da tabela acima + `FORWARDED_ALLOW_IPS=*` (para o rate limit ver o IP real do usuário, não o do proxy do Render)
+- Runtime: **Docker**, usando o `Dockerfile` da raiz do repositório
+- Dependências: `chatvgp/backend/requirements-render.txt`
+- Comando de start: o `CMD` do `Dockerfile` (gunicorn com 4 workers e `--forwarded-allow-ips`, para o rate limit ver o IP real do usuário)
+- Environment: as variáveis da tabela acima
 
 **Vercel (`chatvgp`)**
 - Root Directory: `chatvgp/frontend` · Framework: Create React App
